@@ -2,30 +2,46 @@ package main
 
 import (
 	"EduSync/internal/config"
+	"EduSync/internal/delivery/http"
+	"EduSync/internal/delivery/http/user"
+	userRepository "EduSync/internal/repository/user"
+	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
-	"net/http"
+	"log"
 )
 
 func main() {
-	// 1️⃣ Загружаем конфигурацию
+	// Загружаем конфигурацию
 	cfg := config.LoadConfig()
 
-	// 2️⃣ Инициализируем логирование
+	// Инициализируем логгер
 	util.InitLogger(cfg.LogLevel)
-	logger := util.Logger // Пробрасываем логгер в другие модули
+	logger := util.Logger
 
-	// 3️⃣ Подключаемся к БД
+	// Подключаемся к БД
 	db, err := config.InitDB(cfg.DatabaseURL, logger)
 	if err != nil {
-		logger.Fatal("❌ Ошибка подключения к БД")
+		logger.Fatal("Ошибка подключения к БД")
 	}
 	defer db.Close()
 
-	// 4️⃣ Применяем миграции
+	// Применяем миграции
 	config.ApplyMigrations(db, logger)
 
-	// 5️⃣ Запускаем сервер
+	// Инициализируем JWTManager с секретным ключом
+	jwtManager := util.NewJWTManager(cfg.JWTSecret)
+
+	// Инициализируем репозитории и сервисы
+	userRepo := userRepository.NewUserRepository(db)
+	tokenRepo := userRepository.NewTokenRepository(db)
+	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager)
+	authHandler := user.NewAuthHandler(authService)
+
+	// Настраиваем маршруты через отдельную функцию в delivery слое
+	router := http.SetupRouter(tokenRepo, authHandler, jwtManager)
+
+	// Запускаем сервер
 	port := ":" + cfg.ServerPort
 	logger.Infof("🚀 Сервер запущен на порту %s", port)
-	logger.Fatal(http.ListenAndServe(port, nil)) // В дальнейшем сюда добавится роутинг
+	log.Fatal(router.Run(port))
 }

@@ -12,7 +12,7 @@ import (
 func InitDB(databaseURL string, logger *logrus.Logger) (*sql.DB, error) {
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
-		logger.Fatalf("❌ Ошибка подключения к БД: %v", err)
+		logger.Fatalf("Ошибка подключения к БД: %v", err)
 		return nil, err
 	}
 
@@ -26,6 +26,6 @@ func InitDB(databaseURL string, logger *logrus.Logger) (*sql.DB, error) {
 		}
 	}
 
-	logger.Info("✅ Подключение к БД успешно установлено")
+	logger.Info("Подключение к БД успешно установлено")
 	return db, nil
 }
