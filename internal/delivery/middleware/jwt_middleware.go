@@ -40,7 +40,7 @@ func JWTMiddleware(tokenRepo *user.TokenRepository, jwtManager *util.JWTManager)
 		// Проверяем в БД, есть ли этот токен (защита от использования удалённых токенов)
 		exists, err := tokenRepo.IsTokenValid(tokenStr)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Токен не существует"})
 			c.Abort()
 			return
 		}

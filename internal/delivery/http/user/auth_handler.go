@@ -1,6 +1,7 @@
 package user
 
 import (
+	domainUser "EduSync/internal/domain/user"
 	"net/http"
 	"strings"
 
@@ -8,9 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Service interface {
+	Register(user domainUser.CreateUser) (int, error)
+	Login(email, password, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
+	Logout(accessToken string) error
+	RefreshToken(inputRefreshToken, userAgent, ipAddress string) (accessToken string, refreshToken string, err error)
+}
+
 // AuthHandler обрабатывает запросы, связанные с аутентификацией.
 type AuthHandler struct {
-	authService *user.AuthService
+	authService Service
 }
 
 // NewAuthHandler создает новый обработчик аутентификации.
@@ -20,19 +28,14 @@ func NewAuthHandler(authService *user.AuthService) *AuthHandler {
 
 // RegisterHandler обрабатывает регистрацию.
 func (h *AuthHandler) RegisterHandler(c *gin.Context) {
-	var req struct {
-		Email     string `json:"email" binding:"required,email"`
-		Password  string `json:"password" binding:"required"`
-		FullName  string `json:"full_name" binding:"required"`
-		IsTeacher bool   `json:"is_teacher" binding:"required"`
-	}
+	var req RegistrationUserReq
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
 
-	userID, err := h.authService.Register(req.Email, req.Password, req.FullName, req.IsTeacher)
+	userID, err := h.authService.Register(req.ConvertToSvc())
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
@@ -43,10 +46,7 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 
 // LoginHandler обрабатывает логин.
 func (h *AuthHandler) LoginHandler(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required"`
-	}
+	var req LoginUserReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
@@ -62,7 +62,10 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
+	c.JSON(http.StatusOK, PairTokenResp{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	})
 }
 
 // LogoutHandler отзывающий токен.
@@ -83,9 +86,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 
 // RefreshTokenHandler обрабатывает обновление access-токена.
 func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
-	var req struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
-	}
+	var req RefreshTokenReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
@@ -100,9 +101,8 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": newRefreshToken,
+	c.JSON(http.StatusOK, PairTokenResp{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
 	})
 }

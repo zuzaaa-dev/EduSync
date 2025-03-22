@@ -38,7 +38,7 @@ func (r *TokenRepository) RevokeToken(accessToken string) error {
 
 // IsTokenValid проверяет, существует ли access-токен в БД.
 func (r *TokenRepository) IsTokenValid(accessToken string) (bool, error) {
-	var expiresAt time.Time
+	var expiresAt *time.Time
 	err := r.db.QueryRow(`SELECT expires_at FROM tokens WHERE access_token = $1`, accessToken).Scan(&expiresAt)
 	if err != nil {
 		return false, err

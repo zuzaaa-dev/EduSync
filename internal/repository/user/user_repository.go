@@ -14,12 +14,12 @@ func NewUserRepository(db *sql.DB) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) CreateUser(email, passwordHash, fullName string, isTeacher bool) (int, error) {
+func (r *Repository) CreateUser(user *domainUser.User) (int, error) {
 	var userID int
 	err := r.db.QueryRow(`
 		INSERT INTO users (email, password_hash, full_name, is_teacher)
 		VALUES ($1, $2, $3, $4) RETURNING id
-	`, email, passwordHash, fullName, isTeacher).Scan(&userID)
+	`, user.Email, user.PasswordHash, user.FullName, user.IsTeacher).Scan(&userID)
 	return userID, err
 }
 

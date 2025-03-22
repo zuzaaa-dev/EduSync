@@ -1,37 +1,44 @@
 package user
 
 import (
+	domainUser "EduSync/internal/domain/user"
 	"errors"
 	"time"
 
-	"EduSync/internal/repository/user"
 	"EduSync/internal/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service interface {
-	Register(email, password, fullName string, isTeacher bool) (int, error)
-	Login(email, password, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
-	Logout(accessToken string) error
-	RefreshToken(inputRefreshToken, userAgent, ipAddress string) (accessToken string, refreshToken string, err error)
+// UserRepository описывает контракт для работы с пользователями.
+type UserRepository interface {
+	CreateUser(user *domainUser.User) (int, error)
+	GetUserByEmail(email string) (*domainUser.User, error)
+}
+
+type TokenRepository interface {
+	DeleteTokensForUser(userID int) error
+	SaveToken(userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error
+	RevokeToken(accessToken string) error
+	IsTokenValid(accessToken string) (bool, error)
+	IsRefreshTokenValid(refreshToken string) (bool, error)
 }
 
 // AuthService управляет процессами регистрации, авторизации и логаута.
 type AuthService struct {
-	userRepo   *user.Repository
-	tokenRepo  *user.TokenRepository
+	userRepo   UserRepository
+	tokenRepo  TokenRepository
 	jwtManager *util.JWTManager
 }
 
 // NewAuthService создает новый экземпляр AuthService.
-func NewAuthService(userRepo *user.Repository, tokenRepo *user.TokenRepository, jwtManager *util.JWTManager) *AuthService {
+func NewAuthService(userRepo UserRepository, tokenRepo TokenRepository, jwtManager *util.JWTManager) *AuthService {
 	return &AuthService{userRepo: userRepo, tokenRepo: tokenRepo, jwtManager: jwtManager}
 }
 
 // Register создает нового пользователя.
-func (s *AuthService) Register(email, password, fullName string, isTeacher bool) (int, error) {
+func (s *AuthService) Register(user domainUser.CreateUser) (int, error) {
 	// Проверяем, существует ли пользователь с таким email.
-	existingUser, err := s.userRepo.GetUserByEmail(email)
+	existingUser, err := s.userRepo.GetUserByEmail(user.Email)
 	if err != nil {
 		return 0, err
 	}
@@ -40,13 +47,13 @@ func (s *AuthService) Register(email, password, fullName string, isTeacher bool)
 	}
 
 	// Хешируем пароль.
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return 0, err
 	}
 
 	// Создаем пользователя.
-	userID, err := s.userRepo.CreateUser(email, string(hashedPassword), fullName, isTeacher)
+	userID, err := s.userRepo.CreateUser(user.ConvertToUser(&hashedPassword))
 	return userID, err
 }
 
