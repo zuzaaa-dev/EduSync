@@ -25,11 +25,8 @@ CREATE TABLE institutions
 CREATE TABLE groups
 (
     id             SERIAL PRIMARY KEY,
-    name           VARCHAR(255)        NOT NULL,
-    join_code      VARCHAR(20) UNIQUE  NOT NULL,
-    invite_link    VARCHAR(255) UNIQUE NOT NULL,
-    owner_id       INT                 NOT NULL,
-    institution_id INT                 NOT NULL,
+    name           VARCHAR(255) NOT NULL,
+    institution_id INT          NOT NULL,
     FOREIGN KEY (institution_id) REFERENCES institutions (id)
 );
 
@@ -70,46 +67,59 @@ CREATE TABLE subjects
 -- ================================================
 CREATE TABLE schedule
 (
-    id          SERIAL PRIMARY KEY,
-    group_id    INT         NOT NULL,
-    subject_id  INT         NOT NULL,
-    date        DATE        NOT NULL,
-    pair_number INT         NOT NULL,
-    classroom   VARCHAR(50) NOT NULL,
-    teacher_id  INT         NOT NULL,
-    start_time  TIME        NOT NULL,
-    end_time    TIME        NOT NULL,
+    id               SERIAL PRIMARY KEY,
+    group_id         INT         NOT NULL,
+    subject_id       INT         NOT NULL,
+    date             DATE        NOT NULL,
+    pair_number      INT         NOT NULL,
+    classroom        VARCHAR(50) NOT NULL,
+    teacher_id       INT,
+    teacher_initials VARCHAR(50),
+    start_time       TIME        NOT NULL,
+    end_time         TIME        NOT NULL,
     FOREIGN KEY (group_id) REFERENCES groups (id),
     FOREIGN KEY (subject_id) REFERENCES subjects (id),
-    FOREIGN KEY (teacher_id) REFERENCES teachers (user_id)
+    FOREIGN KEY (teacher_id) REFERENCES teachers (user_id),
+    CHECK (teacher_id IS NOT NULL OR teacher_initials IS NOT NULL)
 );
 
 -- ================================================
--- Таблицы чатов и сообщений
+-- Таблица чатов
 -- ================================================
 CREATE TABLE chats
 (
-    id         SERIAL PRIMARY KEY,
-    group_id   INT NOT NULL,
-    subject_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id          SERIAL PRIMARY KEY,
+    group_id    INT                 NOT NULL,
+    owner_id    INT                 NOT NULL,
+    subject_id  INT                 NOT NULL,
+    join_code   VARCHAR(20) UNIQUE  NOT NULL,
+    invite_link VARCHAR(255) UNIQUE NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES groups (id),
-    FOREIGN KEY (subject_id) REFERENCES subjects (id)
+    FOREIGN KEY (subject_id) REFERENCES subjects (id),
+    FOREIGN KEY (owner_id) REFERENCES teachers (user_id)
 );
+
+-- ================================================
+-- Таблицы сообщений и файлов
+-- ================================================
 
 CREATE TABLE messages
 (
-    id               SERIAL PRIMARY KEY,
-    chat_id          INT NOT NULL,
-    user_id          INT NOT NULL,
-    text             TEXT,
-    message_group_id INT,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id                SERIAL PRIMARY KEY,
+    chat_id           INT NOT NULL,
+    user_id           INT NOT NULL,
+    text              TEXT,
+    message_group_id  INT,
+    parent_message_id INT, -- Ссылка на родительское сообщение (NULL, если это не ответ)
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (text IS NOT NULL OR message_group_id IS NOT NULL),
     FOREIGN KEY (chat_id) REFERENCES chats (id),
     FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (message_group_id) REFERENCES messages (id)
+    FOREIGN KEY (message_group_id) REFERENCES messages (id),
+    FOREIGN KEY (parent_message_id) REFERENCES messages (id) ON DELETE SET NULL
 );
+
 
 CREATE TABLE message_files
 (
@@ -117,6 +127,18 @@ CREATE TABLE message_files
     message_id INT          NOT NULL,
     file_url   VARCHAR(255) NOT NULL,
     FOREIGN KEY (message_id) REFERENCES messages (id) ON DELETE CASCADE
+);
+
+-- ================================================
+-- Таблица для связи студентов и чатов (многие ко многим)
+-- ================================================
+CREATE TABLE student_chats
+(
+    student_id INT NOT NULL,
+    chat_id    INT NOT NULL,
+    PRIMARY KEY (student_id, chat_id),
+    FOREIGN KEY (student_id) REFERENCES students (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE
 );
 
 -- ================================================
@@ -176,4 +198,5 @@ CREATE TABLE institution_email_masks
 -- ================================================
 CREATE UNIQUE INDEX subjects_unique ON subjects (name, institution_id);
 CREATE UNIQUE INDEX schedule_unique ON schedule (group_id, date, pair_number);
-CREATE UNIQUE INDEX chats_unique ON chats (group_id, subject_id);
+CREATE UNIQUE INDEX chats_unique ON chats (group_id, subject_id, owner_id);
+
