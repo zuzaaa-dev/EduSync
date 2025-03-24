@@ -3,11 +3,16 @@ package main
 import (
 	"EduSync/internal/config"
 	"EduSync/internal/delivery/http"
+	groupHandler "EduSync/internal/delivery/http/group"
 	"EduSync/internal/delivery/http/user"
+	"EduSync/internal/integration/parser/rksi/group"
+	groupRepository "EduSync/internal/repository/group"
 	userRepository "EduSync/internal/repository/user"
+	groupServ "EduSync/internal/service/group"
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
+	"time"
 )
 
 func main() {
@@ -34,11 +39,15 @@ func main() {
 	// Инициализируем репозитории и сервисы
 	userRepo := userRepository.NewUserRepository(db)
 	tokenRepo := userRepository.NewTokenRepository(db)
+	groupRepo := groupRepository.NewGroupRepository(db)
 	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager)
 	authHandler := user.NewAuthHandler(authService)
-
+	groupParser := group.NewGroupParser("https://rksi.ru/schedule")
+	groupService := groupServ.NewGroupService(groupRepo, groupParser, 1)
+	go groupService.StartWorker(100 * time.Second)
+	groupHandle := groupHandler.NewGroupHandler(groupService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
-	router := http.SetupRouter(tokenRepo, authHandler, jwtManager)
+	router := http.SetupRouter(tokenRepo, authHandler, jwtManager, groupHandle)
 
 	// Запускаем сервер
 	port := ":" + cfg.ServerPort

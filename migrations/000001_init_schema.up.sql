@@ -199,4 +199,5 @@ CREATE TABLE institution_email_masks
 CREATE UNIQUE INDEX subjects_unique ON subjects (name, institution_id);
 CREATE UNIQUE INDEX schedule_unique ON schedule (group_id, date, pair_number);
 CREATE UNIQUE INDEX chats_unique ON chats (group_id, subject_id, owner_id);
+CREATE UNIQUE INDEX groups_unique ON groups (name, institution_id);
 

@@ -1,7 +1,7 @@
 package user
 
 import (
-	domainUser "EduSync/internal/domain/user"
+	"EduSync/internal/service"
 	"net/http"
 	"strings"
 
@@ -9,16 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Service interface {
-	Register(user domainUser.CreateUser) (int, error)
-	Login(email, password, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
-	Logout(accessToken string) error
-	RefreshToken(inputRefreshToken, userAgent, ipAddress string) (accessToken string, refreshToken string, err error)
-}
-
 // AuthHandler обрабатывает запросы, связанные с аутентификацией.
 type AuthHandler struct {
-	authService Service
+	authService service.UserService
 }
 
 // NewAuthHandler создает новый обработчик аутентификации.

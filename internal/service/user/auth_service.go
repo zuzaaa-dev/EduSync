@@ -2,6 +2,7 @@ package user
 
 import (
 	domainUser "EduSync/internal/domain/user"
+	"EduSync/internal/repository"
 	"errors"
 	"time"
 
@@ -9,29 +10,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// UserRepository описывает контракт для работы с пользователями.
-type UserRepository interface {
-	CreateUser(user *domainUser.User) (int, error)
-	GetUserByEmail(email string) (*domainUser.User, error)
-}
-
-type TokenRepository interface {
-	DeleteTokensForUser(userID int) error
-	SaveToken(userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error
-	RevokeToken(accessToken string) error
-	IsTokenValid(accessToken string) (bool, error)
-	IsRefreshTokenValid(refreshToken string) (bool, error)
-}
-
 // AuthService управляет процессами регистрации, авторизации и логаута.
 type AuthService struct {
-	userRepo   UserRepository
-	tokenRepo  TokenRepository
+	userRepo   repository.UserRepository
+	tokenRepo  repository.TokenRepository
 	jwtManager *util.JWTManager
 }
 
 // NewAuthService создает новый экземпляр AuthService.
-func NewAuthService(userRepo UserRepository, tokenRepo TokenRepository, jwtManager *util.JWTManager) *AuthService {
+func NewAuthService(userRepo repository.UserRepository, tokenRepo repository.TokenRepository, jwtManager *util.JWTManager) *AuthService {
 	return &AuthService{userRepo: userRepo, tokenRepo: tokenRepo, jwtManager: jwtManager}
 }
 
