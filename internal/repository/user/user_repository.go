@@ -4,6 +4,8 @@ import (
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 )
 
 // Repository обеспечивает работу с таблицей пользователей.
@@ -31,8 +33,8 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*domainU
 		FROM users 
 		WHERE email = $1
 	`, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName, &user.IsTeacher)
-	if err == sql.ErrNoRows {
-		return nil, nil
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("неудалось получить пользователя: %w", err)
 	}
 	return user, err
 }

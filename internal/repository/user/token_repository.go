@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -45,7 +46,7 @@ func (r *TokenRepository) IsTokenValid(ctx context.Context, accessToken string) 
 		FROM tokens 
 		WHERE access_token = $1`, accessToken).Scan(&expiresAt)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("ошибка провкерки токена: %w", err)
 	}
 	// Проверяем, не истёк ли токен
 	if expiresAt.Before(time.Now()) {
@@ -64,7 +65,7 @@ func (r *TokenRepository) IsRefreshTokenValid(ctx context.Context, refreshToken 
 			WHERE refresh_token = $1
 			)`, refreshToken).Scan(&exists)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("ошибка проверки токена: %w", err)
 	}
 	return exists, nil
 }

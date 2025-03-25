@@ -2,6 +2,7 @@ package service
 
 import (
 	domainGroup "EduSync/internal/domain/group"
+	domainInstitution "EduSync/internal/domain/institution"
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"time"
@@ -20,4 +21,10 @@ type GroupService interface {
 	GetGroupById(ctx context.Context, groupId int) (*domainGroup.Group, error)
 	StartWorker(interval time.Duration)
 	UpdateGroups() error
+}
+
+// InstitutionService описывает методы работы с учебными заведениями.
+type InstitutionService interface {
+	GetInstitutionByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
+	GetAllInstitutions(ctx context.Context) ([]*domainInstitution.Institution, error)
 }

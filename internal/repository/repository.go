@@ -2,6 +2,7 @@ package repository
 
 import (
 	domainGroup "EduSync/internal/domain/group"
+	domainInstitution "EduSync/internal/domain/institution"
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"time"
@@ -26,4 +27,10 @@ type GroupRepository interface {
 	SaveGroups(ctx context.Context, groups []*domainGroup.Group) error
 	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
 	GetById(ctx context.Context, groupId int) (*domainGroup.Group, error)
+}
+
+// InstitutionRepository описывает контракт доступа к данным учебных заведений.
+type InstitutionRepository interface {
+	GetByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
+	GetAll(ctx context.Context) ([]*domainInstitution.Institution, error)
 }

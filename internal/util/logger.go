@@ -16,7 +16,9 @@ func InitLogger(level string) {
 
 	Logger.SetLevel(logLevel)
 	Logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
+		ForceColors:     true,
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	Logger.SetOutput(os.Stdout)
 
