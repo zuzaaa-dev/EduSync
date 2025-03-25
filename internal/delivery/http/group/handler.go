@@ -20,7 +20,7 @@ func NewGroupHandler(service service.GroupService) *GroupHandler {
 
 // GetGroupsByInstitutionID возвращает группы для указанного учреждения.
 func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
-	institutionIDStr := c.Query("institution_id")
+	institutionIDStr := c.Param("institution_id")
 	institutionID, err := strconv.Atoi(institutionIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный institution_id"})
@@ -37,7 +37,7 @@ func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
 
 // GetGroupByID возвращает группы для указанного учреждения.
 func (h *GroupHandler) GetGroupByID(c *gin.Context) {
-	institutionIDStr := c.Query("id")
+	institutionIDStr := c.Param("id")
 	institutionID, err := strconv.Atoi(institutionIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный institution_id"})

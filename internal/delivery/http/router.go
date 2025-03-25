@@ -1,7 +1,7 @@
 package http
 
 import (
-	"EduSync/internal/delivery/http/group"
+	groupHandler "EduSync/internal/delivery/http/group"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	userRepository "EduSync/internal/repository/user"
 )
 
-func SetupRouter(tokenRepo *userRepository.TokenRepository, authHandler *user.AuthHandler, jwtManager *util.JWTManager, groupHandler *group.GroupHandler) *gin.Engine {
+func SetupRouter(tokenRepo *userRepository.TokenRepository, authHandler *user.AuthHandler, jwtManager *util.JWTManager, groupHandler *groupHandler.GroupHandler) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
@@ -37,8 +37,12 @@ func SetupRouter(tokenRepo *userRepository.TokenRepository, authHandler *user.Au
 				})
 			})
 		}
-		api.GET("/groups", groupHandler.GetGroupsByInstitutionID)
-		api.GET("/group", groupHandler.GetGroupByID)
+		group := api.Group("/group")
+		{
+			group.GET("/institution/:institution_id", groupHandler.GetGroupsByInstitutionID)
+			group.GET("/:id", groupHandler.GetGroupByID)
+		}
+
 	}
 
 	return router
