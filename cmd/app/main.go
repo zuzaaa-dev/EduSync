@@ -12,7 +12,6 @@ import (
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
-	"time"
 )
 
 func main() {
@@ -44,7 +43,7 @@ func main() {
 	authHandler := user.NewAuthHandler(authService)
 	groupParser := group.NewGroupParser("https://rksi.ru/schedule")
 	groupService := groupServ.NewGroupService(groupRepo, groupParser, 1)
-	go groupService.StartWorker(100 * time.Second)
+	//go groupService.StartWorker(100 * time.Second)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, authHandler, jwtManager, groupHandle)

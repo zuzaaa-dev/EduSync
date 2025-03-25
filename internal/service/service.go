@@ -16,4 +16,5 @@ type UserService interface {
 type GroupService interface {
 	UpdateGroups() error
 	GetGroupsByInstitutionID(institutionID int) ([]*domainGroup.Group, error)
+	GetGroupById(groupId int) (*domainGroup.Group, error)
 }

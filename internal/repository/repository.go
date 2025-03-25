@@ -24,4 +24,5 @@ type TokenRepository interface {
 type GroupRepository interface {
 	SaveGroups(groups []*domainGroup.Group) error
 	GetByInstitutionID(institutionID int) ([]*domainGroup.Group, error)
+	GetById(groupId int) (*domainGroup.Group, error)
 }

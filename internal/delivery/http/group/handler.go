@@ -34,3 +34,20 @@ func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, groups)
 }
+
+// GetGroupByID возвращает группы для указанного учреждения.
+func (h *GroupHandler) GetGroupByID(c *gin.Context) {
+	institutionIDStr := c.Query("id")
+	institutionID, err := strconv.Atoi(institutionIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный institution_id"})
+		return
+	}
+
+	groups, err := h.service.GetGroupById(institutionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, groups)
+}

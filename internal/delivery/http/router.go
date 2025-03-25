@@ -38,7 +38,7 @@ func SetupRouter(tokenRepo *userRepository.TokenRepository, authHandler *user.Au
 			})
 		}
 		api.GET("/groups", groupHandler.GetGroupsByInstitutionID)
-		//api.POST("/groups/update", groupHandler)
+		api.GET("/group", groupHandler.GetGroupByID)
 	}
 
 	return router

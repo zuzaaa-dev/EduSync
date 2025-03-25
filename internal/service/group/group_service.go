@@ -52,6 +52,10 @@ func (s *GroupService) GetGroupsByInstitutionID(institutionID int) ([]*domainGro
 	return s.repo.GetByInstitutionID(institutionID)
 }
 
+func (s *GroupService) GetGroupById(groupId int) (*domainGroup.Group, error) {
+	return s.repo.GetById(groupId)
+}
+
 // Запуск воркера для периодического обновления групп (например, раз в 24 часа).
 func (s *GroupService) StartWorker(interval time.Duration) {
 	go func() {

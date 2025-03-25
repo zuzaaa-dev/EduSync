@@ -62,3 +62,13 @@ func (r *GroupRepository) GetByInstitutionID(institutionID int) ([]*domainGroup.
 	}
 	return groups, nil
 }
+
+func (r *GroupRepository) GetById(id int) (*domainGroup.Group, error) {
+	group := &domainGroup.Group{}
+	err := r.db.QueryRow(`SELECT id, name, institution_id FROM groups WHERE id = $1`, id).Scan(&group.ID, &group.Name, &group.InstitutionID)
+	if err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}
