@@ -28,7 +28,7 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	userID, err := h.authService.Register(req.ConvertToSvc())
+	userID, err := h.authService.Register(c.Request.Context(), req.ConvertToSvc())
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
@@ -49,7 +49,7 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	userAgent := c.Request.UserAgent()
 	ipAddress := c.ClientIP()
 
-	accessToken, refreshToken, err := h.authService.Login(req.Email, req.Password, userAgent, ipAddress)
+	accessToken, refreshToken, err := h.authService.Login(c.Request.Context(), req.Email, req.Password, userAgent, ipAddress)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
@@ -69,7 +69,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 		return
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
-	if err := h.authService.Logout(token); err != nil {
+	if err := h.authService.Logout(c.Request.Context(), token); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка выхода"})
 		return
 	}
@@ -89,7 +89,7 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 	userAgent := c.Request.UserAgent()
 	ipAddress := c.ClientIP()
 
-	accessToken, newRefreshToken, err := h.authService.RefreshToken(req.RefreshToken, userAgent, ipAddress)
+	accessToken, newRefreshToken, err := h.authService.RefreshToken(c.Request.Context(), req.RefreshToken, userAgent, ipAddress)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return

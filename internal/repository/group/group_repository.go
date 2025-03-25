@@ -2,8 +2,8 @@ package group
 
 import (
 	domainGroup "EduSync/internal/domain/group"
+	"context"
 	"database/sql"
-	"fmt"
 )
 
 // GroupRepository реализует интерфейс Repository для PostgreSQL.
@@ -17,20 +17,20 @@ func NewGroupRepository(db *sql.DB) *GroupRepository {
 }
 
 // SaveGroups сохраняет группы в БД. Здесь можно реализовать логику обновления (UPSERT) или простое добавление.
-func (r *GroupRepository) SaveGroups(groups []*domainGroup.Group) error {
+func (r *GroupRepository) SaveGroups(ctx context.Context, groups []*domainGroup.Group) error {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return fmt.Errorf("не удалось начать транзакцию: %v", err)
+		return err
 	}
 
-	stmt, err := tx.Prepare(`
+	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO groups (name, institution_id)
 		VALUES ($1, $2)
 		ON CONFLICT (name, institution_id) DO NOTHING
 	`)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("не удалось подготовить запрос: %v", err)
+		return err
 	}
 	defer stmt.Close()
 
@@ -38,15 +38,18 @@ func (r *GroupRepository) SaveGroups(groups []*domainGroup.Group) error {
 		_, err := stmt.Exec(g.Name, g.InstitutionID)
 		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf("ошибка при сохранении группы %s: %v", g.Name, err)
+			return err
 		}
 	}
 
 	return tx.Commit()
 }
 
-func (r *GroupRepository) GetByInstitutionID(institutionID int) ([]*domainGroup.Group, error) {
-	rows, err := r.db.Query(`SELECT id, name, institution_id FROM groups WHERE institution_id = $1`, institutionID)
+func (r *GroupRepository) GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, name, institution_id 
+		FROM groups 
+		WHERE institution_id = $1`, institutionID)
 	if err != nil {
 		return nil, err
 	}
@@ -63,9 +66,12 @@ func (r *GroupRepository) GetByInstitutionID(institutionID int) ([]*domainGroup.
 	return groups, nil
 }
 
-func (r *GroupRepository) GetById(id int) (*domainGroup.Group, error) {
+func (r *GroupRepository) GetById(ctx context.Context, id int) (*domainGroup.Group, error) {
 	group := &domainGroup.Group{}
-	err := r.db.QueryRow(`SELECT id, name, institution_id FROM groups WHERE id = $1`, id).Scan(&group.ID, &group.Name, &group.InstitutionID)
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, name, institution_id 
+		FROM groups 
+		WHERE id = $1`, id).Scan(&group.ID, &group.Name, &group.InstitutionID)
 	if err != nil {
 		return nil, err
 	}

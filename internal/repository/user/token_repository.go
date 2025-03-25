@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"database/sql"
 	"time"
 )
@@ -16,14 +17,14 @@ func NewTokenRepository(db *sql.DB) *TokenRepository {
 
 // DeleteTokensForUser удаляет все токены для пользователя.
 // Это позволит гарантировать, что при новом логине не будет дублирования.
-func (r *TokenRepository) DeleteTokensForUser(userID int) error {
-	_, err := r.db.Exec(`DELETE FROM tokens WHERE user_id = $1`, userID)
+func (r *TokenRepository) DeleteTokensForUser(ctx context.Context, userID int) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM tokens WHERE user_id = $1`, userID)
 	return err
 }
 
 // SaveToken сохраняет новый токен для пользователя.
-func (r *TokenRepository) SaveToken(userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error {
-	_, err := r.db.Exec(`
+func (r *TokenRepository) SaveToken(ctx context.Context, userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO tokens (user_id, access_token, refresh_token, user_agent, ip_address, expires_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`, userID, accessToken, refreshToken, userAgent, ipAddress, expiresAt)
@@ -31,15 +32,18 @@ func (r *TokenRepository) SaveToken(userID int, accessToken, refreshToken, userA
 }
 
 // RevokeToken удаляет токен по значению access_token.
-func (r *TokenRepository) RevokeToken(accessToken string) error {
-	_, err := r.db.Exec(`DELETE FROM tokens WHERE access_token = $1`, accessToken)
+func (r *TokenRepository) RevokeToken(ctx context.Context, accessToken string) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM tokens WHERE access_token = $1`, accessToken)
 	return err
 }
 
 // IsTokenValid проверяет, существует ли access-токен в БД.
-func (r *TokenRepository) IsTokenValid(accessToken string) (bool, error) {
+func (r *TokenRepository) IsTokenValid(ctx context.Context, accessToken string) (bool, error) {
 	var expiresAt *time.Time
-	err := r.db.QueryRow(`SELECT expires_at FROM tokens WHERE access_token = $1`, accessToken).Scan(&expiresAt)
+	err := r.db.QueryRowContext(ctx, `
+		SELECT expires_at 
+		FROM tokens 
+		WHERE access_token = $1`, accessToken).Scan(&expiresAt)
 	if err != nil {
 		return false, err
 	}
@@ -51,9 +55,14 @@ func (r *TokenRepository) IsTokenValid(accessToken string) (bool, error) {
 }
 
 // IsRefreshTokenValid проверяет, существует ли refresh-токен в БД.
-func (r *TokenRepository) IsRefreshTokenValid(refreshToken string) (bool, error) {
+func (r *TokenRepository) IsRefreshTokenValid(ctx context.Context, refreshToken string) (bool, error) {
 	var exists bool
-	err := r.db.QueryRow(`SELECT EXISTS (SELECT 1 FROM tokens WHERE refresh_token = $1)`, refreshToken).Scan(&exists)
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1 
+			FROM tokens 
+			WHERE refresh_token = $1
+			)`, refreshToken).Scan(&exists)
 	if err != nil {
 		return false, err
 	}

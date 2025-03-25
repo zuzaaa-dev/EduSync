@@ -10,7 +10,7 @@ import (
 
 // Parser описывает интерфейс для получения групп.
 type Parser interface {
-	FetchGroups() ([]string, error)
+	FetchGroups() ([]string, int, error)
 }
 
 // FetchPage выполняет запрос к сайту и возвращает HTML-страницу.

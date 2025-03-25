@@ -27,7 +27,7 @@ func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
 		return
 	}
 
-	groups, err := h.service.GetGroupsByInstitutionID(institutionID)
+	groups, err := h.service.GetGroupsByInstitutionID(c.Request.Context(), institutionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -44,7 +44,7 @@ func (h *GroupHandler) GetGroupByID(c *gin.Context) {
 		return
 	}
 
-	groups, err := h.service.GetGroupById(institutionID)
+	groups, err := h.service.GetGroupById(c.Request.Context(), institutionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -39,12 +39,15 @@ func main() {
 	userRepo := userRepository.NewUserRepository(db)
 	tokenRepo := userRepository.NewTokenRepository(db)
 	groupRepo := groupRepository.NewGroupRepository(db)
-	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager)
+
+	groupParser := group.NewGroupParser(cfg.UrlParserRKSI, logger)
+
+	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager, logger)
 	authHandler := user.NewAuthHandler(authService)
-	groupParser := group.NewGroupParser(cfg.UrlParserRKSI)
-	groupService := groupServ.NewGroupService(groupRepo, groupParser, 1)
+	groupService := groupServ.NewGroupService(groupRepo, groupParser, logger)
 	//go groupService.StartWorker(100 * time.Second)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
+
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, authHandler, jwtManager, groupHandle)
 

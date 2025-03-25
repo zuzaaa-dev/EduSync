@@ -4,67 +4,74 @@ import (
 	domainGroup "EduSync/internal/domain/group"
 	"EduSync/internal/integration/parser/rksi"
 	"EduSync/internal/repository"
-	"fmt"
+	"context"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
-type GroupService struct {
+type Service struct {
 	repo          repository.GroupRepository
 	parser        rksi.Parser // Интерфейс, описывающий методы парсинга групп
 	institutionID int         // ID учебного заведения (для rksi)
+	log           *logrus.Logger
 }
 
 // NewGroupService создает новый сервис групп.
-func NewGroupService(repo repository.GroupRepository, parser rksi.Parser, institutionID int) *GroupService {
-	return &GroupService{
-		repo:          repo,
-		parser:        parser,
-		institutionID: institutionID,
+func NewGroupService(repo repository.GroupRepository, parser rksi.Parser, logger *logrus.Logger) *Service {
+	return &Service{
+		repo:   repo,
+		parser: parser,
+		log:    logger,
 	}
 }
 
 // UpdateGroups получает группы через парсер и сохраняет их в БД.
-func (s *GroupService) UpdateGroups() error {
+func (s *Service) UpdateGroups() error {
+	s.log.Info("Обновление групп")
 	// Парсим группы. Парсер внутри адаптера может возвращать слайс строк (названий групп)
-	groupNames, err := s.parser.FetchGroups()
+	groupNames, institutionId, err := s.parser.FetchGroups()
 	if err != nil {
-		return fmt.Errorf("ошибка парсинга групп: %v", err)
+		s.log.Errorf("Ошибка парсинга групп: %v", err)
+		return err
 	}
 
 	var groups []*domainGroup.Group
 	for _, name := range groupNames {
 		groups = append(groups, &domainGroup.Group{
 			Name:          name,
-			InstitutionID: s.institutionID,
+			InstitutionID: institutionId,
 		})
 	}
 
 	// Сохраняем группы в БД
-	if err := s.repo.SaveGroups(groups); err != nil {
-		return fmt.Errorf("ошибка сохранения групп: %v", err)
+	if err := s.repo.SaveGroups(context.Background(), groups); err != nil {
+		s.log.Errorf("Ошибка парсинга групп: %v", err)
+		return err
 	}
 
 	return nil
 }
 
 // GetGroupsByInstitutionID возвращает группы для заданного учреждения.
-func (s *GroupService) GetGroupsByInstitutionID(institutionID int) ([]*domainGroup.Group, error) {
-	return s.repo.GetByInstitutionID(institutionID)
+func (s *Service) GetGroupsByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
+	s.log.Infof("Получение группы по id учреждения: %d", institutionID)
+	return s.repo.GetByInstitutionID(ctx, institutionID)
 }
 
-func (s *GroupService) GetGroupById(groupId int) (*domainGroup.Group, error) {
-	return s.repo.GetById(groupId)
+func (s *Service) GetGroupById(ctx context.Context, groupId int) (*domainGroup.Group, error) {
+	s.log.Infof("Получение группы по id группы: %d", groupId)
+	return s.repo.GetById(ctx, groupId)
 }
 
 // Запуск воркера для периодического обновления групп (например, раз в 24 часа).
-func (s *GroupService) StartWorker(interval time.Duration) {
+func (s *Service) StartWorker(interval time.Duration) {
 	go func() {
 		for {
 			err := s.UpdateGroups()
 			if err != nil {
-				fmt.Printf("Ошибка обновления групп: %v\n", err)
+				s.log.Errorf("Ошибка обновления групп: %v\n", err)
 			} else {
-				fmt.Println("Группы успешно обновлены")
+				s.log.Infof("Группы успешно обновлены")
 			}
 			time.Sleep(interval)
 		}
