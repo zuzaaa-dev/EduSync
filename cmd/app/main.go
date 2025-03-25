@@ -41,7 +41,7 @@ func main() {
 	groupRepo := groupRepository.NewGroupRepository(db)
 	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager)
 	authHandler := user.NewAuthHandler(authService)
-	groupParser := group.NewGroupParser("https://rksi.ru/schedule")
+	groupParser := group.NewGroupParser(cfg.UrlParserRKSI)
 	groupService := groupServ.NewGroupService(groupRepo, groupParser, 1)
 	//go groupService.StartWorker(100 * time.Second)
 	groupHandle := groupHandler.NewGroupHandler(groupService)

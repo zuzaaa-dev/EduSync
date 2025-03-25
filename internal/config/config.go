@@ -9,10 +9,11 @@ import (
 
 // Config хранит настройки приложения
 type Config struct {
-	ServerPort  string
-	DatabaseURL string
-	LogLevel    string
-	JWTSecret   []byte
+	ServerPort    string
+	DatabaseURL   string
+	LogLevel      string
+	JWTSecret     []byte
+	UrlParserRKSI string
 }
 
 // LoadConfig загружает конфигурацию из .env или переменных окружения
@@ -22,10 +23,11 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		ServerPort:  getEnv("SERVER_PORT", "8080"),
-		DatabaseURL: getEnv("DATABASE_URL", ""),
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		JWTSecret:   []byte(getEnv("JWT_SECRET", "default-secret-key")),
+		ServerPort:    getEnv("SERVER_PORT", "8080"),
+		DatabaseURL:   getEnv("DATABASE_URL", ""),
+		LogLevel:      getEnv("LOG_LEVEL", "info"),
+		JWTSecret:     []byte(getEnv("JWT_SECRET", "default-secret-key")),
+		UrlParserRKSI: getEnv("URL_PARSER_RKSI", ""),
 	}
 }
 
