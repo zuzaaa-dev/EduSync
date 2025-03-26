@@ -5,7 +5,6 @@ import (
 	"EduSync/internal/repository"
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 )
 
@@ -29,13 +28,17 @@ func (r *Repository) CreateUser(ctx context.Context, user *domainUser.User) (int
 
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error) {
 	user := &domainUser.User{}
+
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, email, password_hash, full_name, is_teacher 
 		FROM users 
 		WHERE email = $1
 	`, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName, &user.IsTeacher)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("неудалось получить пользователя: %w", err)
+	if err == sql.ErrNoRows {
+		return nil, nil // Пользователь не найден, возвращаем nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения пользователя: %w", err)
 	}
 	return user, err
 }

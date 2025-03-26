@@ -34,7 +34,6 @@ func main() {
 
 	// Применяем миграции
 	config.ApplyMigrations(db, logger)
-	// TODO: пересмотреть подход реализаций репозитория
 	// TODO: Переделать вход с учетом проверки учреждения и проверки группы для студента
 
 	// Инициализируем JWTManager с секретным ключом
@@ -42,17 +41,25 @@ func main() {
 
 	// Инициализируем репозитории и сервисы
 	userRepo := userRepository.NewUserRepository(db)
+	studentRepo := userRepository.NewStudentRepository(db)
+	teacherRepo := userRepository.NewTeacherRepository(db)
 	tokenRepo := userRepository.NewTokenRepository(db)
 	groupRepo := groupRepository.NewGroupRepository(db)
 	institutionRepo := institutionRepository.NewRepository(db)
 
 	groupParser := group.NewGroupParser(cfg.UrlParserRKSI, logger)
 
-	authService := userService.NewAuthService(userRepo, tokenRepo, jwtManager, logger)
+	authService := userService.NewAuthService(userRepo,
+		studentRepo,
+		teacherRepo,
+		tokenRepo,
+		jwtManager,
+		logger)
+
 	authHandler := user.NewAuthHandler(authService)
 	groupService := groupServ.NewGroupService(groupRepo, groupParser, logger)
-	//go groupService.StartWorker(100 * time.Second)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
+	//go groupService.StartWorker(100 * time.Second)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое

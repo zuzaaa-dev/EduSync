@@ -15,18 +15,28 @@ import (
 
 // AuthService управляет процессами регистрации, авторизации и логаута.
 type AuthService struct {
-	userRepo   repository.UserRepository
-	tokenRepo  repository.TokenRepository
-	jwtManager *util.JWTManager
-	log        *logrus.Logger
+	userRepo    repository.UserRepository
+	studentRepo repository.StudentRepository
+	teacherRepo repository.TeacherRepository
+	tokenRepo   repository.TokenRepository
+	jwtManager  *util.JWTManager
+	log         *logrus.Logger
 }
 
 // NewAuthService создает новый экземпляр AuthService.
 func NewAuthService(userRepo repository.UserRepository,
+	studentRepo repository.StudentRepository,
+	teacherRepo repository.TeacherRepository,
 	tokenRepo repository.TokenRepository,
 	jwtManager *util.JWTManager,
 	log *logrus.Logger) service.UserService {
-	return &AuthService{userRepo: userRepo, tokenRepo: tokenRepo, jwtManager: jwtManager, log: log}
+	return &AuthService{userRepo: userRepo,
+		studentRepo: studentRepo,
+		teacherRepo: teacherRepo,
+		tokenRepo:   tokenRepo,
+		jwtManager:  jwtManager,
+		log:         log,
+	}
 }
 
 // Register создает нового пользователя.
@@ -49,7 +59,20 @@ func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) 
 	}
 
 	// Создаем пользователя.
-	userID, err := s.userRepo.CreateUser(ctx, user.ConvertToUser(&hashedPassword))
+	userID, err := s.userRepo.CreateUser(ctx, user.ConvertToUser(hashedPassword))
+	// Если студент, сохраняем данные в таблице студентов
+	if !user.IsTeacher {
+		err = s.studentRepo.CreateStudent(ctx, userID, user.InstitutionID, user.GroupID)
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		// Если преподаватель, сохраняем данные в таблице teachers
+		err = s.teacherRepo.CreateTeacher(ctx, userID, user.InstitutionID)
+		if err != nil {
+			return 0, err
+		}
+	}
 	return userID, err
 }
 

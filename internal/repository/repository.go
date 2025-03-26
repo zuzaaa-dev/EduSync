@@ -34,3 +34,17 @@ type InstitutionRepository interface {
 	GetByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
 	GetAll(ctx context.Context) ([]*domainInstitution.Institution, error)
 }
+
+// StudentRepository описывает контракт для работы со студентами.
+type StudentRepository interface {
+	CreateStudent(ctx context.Context, userID, institutionID, groupID int) error
+	GetStudentByUserID(ctx context.Context, userID int) (*domainUser.Student, error)
+	GetStudentsByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error)
+}
+
+// TeacherRepository описывает контракт для работы с преподавателями.
+type TeacherRepository interface {
+	CreateTeacher(ctx context.Context, userID, institutionID int) error
+	GetTeacherByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
+	GetTeachersByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
+}

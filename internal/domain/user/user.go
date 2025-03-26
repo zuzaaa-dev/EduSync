@@ -11,16 +11,29 @@ type User struct {
 
 // CreateUser представляет пользователя системы.
 type CreateUser struct {
-	Email     string
-	Password  string
-	FullName  string
-	IsTeacher bool
+	Email         string
+	Password      string
+	FullName      string
+	IsTeacher     bool
+	InstitutionID int
+	GroupID       int
 }
 
-func (r *CreateUser) ConvertToUser(passwordHash *[]byte) *User {
+type Student struct {
+	UserID        int
+	InstitutionID int
+	GroupID       int
+}
+
+type Teacher struct {
+	UserID        int
+	InstitutionID int
+}
+
+func (r *CreateUser) ConvertToUser(passwordHash []byte) *User {
 	return &User{
 		Email:        r.Email,
-		PasswordHash: *passwordHash,
+		PasswordHash: passwordHash,
 		FullName:     r.FullName,
 		IsTeacher:    r.IsTeacher,
 	}

@@ -26,8 +26,12 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
-
-	userID, err := h.authService.Register(c.Request.Context(), req.ConvertToSvc())
+	converter, err := req.ConvertToSvc()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	userID, err := h.authService.Register(c.Request.Context(), converter)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
