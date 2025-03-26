@@ -2,6 +2,7 @@ package institution
 
 import (
 	domainInstitution "EduSync/internal/domain/institution"
+	"EduSync/internal/repository"
 	"context"
 	"database/sql"
 	"errors"
@@ -13,7 +14,7 @@ type Repository struct {
 	db *sql.DB
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB) repository.InstitutionRepository {
 	return &Repository{db: db}
 }
 

@@ -10,10 +10,9 @@ import (
 )
 
 type Service struct {
-	repo          repository.GroupRepository
-	parser        rksi.Parser // Интерфейс, описывающий методы парсинга групп
-	institutionID int         // ID учебного заведения (для rksi)
-	log           *logrus.Logger
+	repo   repository.GroupRepository
+	parser rksi.Parser // Интерфейс, описывающий методы парсинга групп
+	log    *logrus.Logger
 }
 
 // NewGroupService создает новый сервис групп.

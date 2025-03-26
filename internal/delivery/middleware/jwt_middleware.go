@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"strings"
 
-	"EduSync/internal/repository/user"
+	"EduSync/internal/repository"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
 )
 
 // JWTMiddleware проверяет JWT и сверяет его с базой данных.
-func JWTMiddleware(tokenRepo *user.TokenRepository, jwtManager *util.JWTManager) gin.HandlerFunc {
+func JWTMiddleware(tokenRepo repository.TokenRepository, jwtManager *util.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

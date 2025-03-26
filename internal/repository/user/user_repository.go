@@ -2,6 +2,7 @@ package user
 
 import (
 	domainUser "EduSync/internal/domain/user"
+	"EduSync/internal/repository"
 	"context"
 	"database/sql"
 	"errors"
@@ -13,7 +14,7 @@ type Repository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *Repository {
+func NewUserRepository(db *sql.DB) repository.UserRepository {
 	return &Repository{db: db}
 }
 

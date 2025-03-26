@@ -3,6 +3,7 @@ package institution
 import (
 	domainInstitution "EduSync/internal/domain/institution"
 	"EduSync/internal/repository"
+	"EduSync/internal/service"
 	"context"
 
 	"github.com/sirupsen/logrus"
@@ -13,7 +14,7 @@ type Service struct {
 	log  *logrus.Logger
 }
 
-func NewInstitutionService(repo repository.InstitutionRepository, logger *logrus.Logger) *Service {
+func NewInstitutionService(repo repository.InstitutionRepository, logger *logrus.Logger) service.InstitutionService {
 	return &Service{
 		repo: repo,
 		log:  logger,

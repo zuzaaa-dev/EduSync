@@ -2,6 +2,7 @@ package group
 
 import (
 	domainGroup "EduSync/internal/domain/group"
+	"EduSync/internal/repository"
 	"context"
 	"database/sql"
 )
@@ -12,7 +13,7 @@ type GroupRepository struct {
 }
 
 // NewGroupRepository возвращает новую реализацию Repository.
-func NewGroupRepository(db *sql.DB) *GroupRepository {
+func NewGroupRepository(db *sql.DB) repository.GroupRepository {
 	return &GroupRepository{db: db}
 }
 

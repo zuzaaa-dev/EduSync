@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"EduSync/internal/service/user"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,7 +14,7 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler создает новый обработчик аутентификации.
-func NewAuthHandler(authService *user.AuthService) *AuthHandler {
+func NewAuthHandler(authService service.UserService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 

@@ -3,6 +3,7 @@ package user
 import (
 	domainUser "EduSync/internal/domain/user"
 	"EduSync/internal/repository"
+	"EduSync/internal/service"
 	"context"
 	"errors"
 	"github.com/sirupsen/logrus"
@@ -21,7 +22,10 @@ type AuthService struct {
 }
 
 // NewAuthService создает новый экземпляр AuthService.
-func NewAuthService(userRepo repository.UserRepository, tokenRepo repository.TokenRepository, jwtManager *util.JWTManager, log *logrus.Logger) *AuthService {
+func NewAuthService(userRepo repository.UserRepository,
+	tokenRepo repository.TokenRepository,
+	jwtManager *util.JWTManager,
+	log *logrus.Logger) service.UserService {
 	return &AuthService{userRepo: userRepo, tokenRepo: tokenRepo, jwtManager: jwtManager, log: log}
 }
 

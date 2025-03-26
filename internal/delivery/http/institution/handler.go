@@ -4,16 +4,16 @@ import (
 	"net/http"
 	"strconv"
 
-	service "EduSync/internal/service/institution"
+	service "EduSync/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 // InstitutionHandler обрабатывает HTTP-запросы, связанные с учебными заведениями.
 type InstitutionHandler struct {
-	instService *service.Service
+	instService service.InstitutionService
 }
 
-func NewInstitutionHandler(s *service.Service) *InstitutionHandler {
+func NewInstitutionHandler(s service.InstitutionService) *InstitutionHandler {
 	return &InstitutionHandler{instService: s}
 }
 

@@ -5,13 +5,13 @@ import (
 	instituteHandler "EduSync/internal/delivery/http/institution"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/delivery/middleware"
-	userRepository "EduSync/internal/repository/user"
+	userRepository "EduSync/internal/repository"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func SetupRouter(tokenRepo *userRepository.TokenRepository,
+func SetupRouter(tokenRepo userRepository.TokenRepository,
 	authHandler *user.AuthHandler,
 	jwtManager *util.JWTManager,
 	groupHandler *groupHandler.GroupHandler,

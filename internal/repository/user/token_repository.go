@@ -1,6 +1,7 @@
 package user
 
 import (
+	"EduSync/internal/repository"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,7 +13,7 @@ type TokenRepository struct {
 	db *sql.DB
 }
 
-func NewTokenRepository(db *sql.DB) *TokenRepository {
+func NewTokenRepository(db *sql.DB) repository.TokenRepository {
 	return &TokenRepository{db: db}
 }
 
