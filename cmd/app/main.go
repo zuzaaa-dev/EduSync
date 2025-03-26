@@ -34,7 +34,6 @@ func main() {
 
 	// Применяем миграции
 	config.ApplyMigrations(db, logger)
-	// TODO: Переделать вход с учетом проверки учреждения и проверки группы для студента
 
 	// Инициализируем JWTManager с секретным ключом
 	jwtManager := util.NewJWTManager(cfg.JWTSecret)
