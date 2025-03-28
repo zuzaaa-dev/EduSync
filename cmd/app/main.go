@@ -5,13 +5,16 @@ import (
 	"EduSync/internal/delivery/http"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
+	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/integration/parser/rksi/group"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
+	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
+	subjectServ "EduSync/internal/service/subject"
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
@@ -37,7 +40,6 @@ func main() {
 
 	// Инициализируем JWTManager с секретным ключом
 	jwtManager := util.NewJWTManager(cfg.JWTSecret)
-	// TODO Реализовать subjects
 	// TODO Реализовать schedule
 	// TODO проврки: есть ли группа по названию
 	// TODO проврки: subject, если нет, то добавить предмет
@@ -49,17 +51,21 @@ func main() {
 	teacherRepo := userRepository.NewTeacherRepository(db)
 	tokenRepo := userRepository.NewTokenRepository(db)
 	groupRepo := groupRepository.NewGroupRepository(db)
-	institutionRepo := institutionRepository.NewRepository(db)
+	subjectRepo := subjectRepository.NewSubjectRepository(db)
 
+	institutionRepo := institutionRepository.NewRepository(db)
 	groupParser := group.NewGroupParser(cfg.UrlParserRKSI, logger)
+	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
 
 	authService := userService.NewAuthService(userRepo,
 		studentRepo,
 		teacherRepo,
 		tokenRepo,
 		jwtManager,
-		logger)
+		logger,
+	)
 
+	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupService := groupServ.NewGroupService(groupRepo, groupParser, logger)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
@@ -67,7 +73,13 @@ func main() {
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
-	router := http.SetupRouter(tokenRepo, authHandler, jwtManager, groupHandle, institutionHandler)
+	router := http.SetupRouter(tokenRepo,
+		authHandler,
+		jwtManager,
+		groupHandle,
+		institutionHandler,
+		subjectHandle,
+	)
 
 	// Запускаем сервер
 	port := ":" + cfg.ServerPort

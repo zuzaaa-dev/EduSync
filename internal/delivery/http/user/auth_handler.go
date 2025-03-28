@@ -21,7 +21,7 @@ func NewAuthHandler(authService service.UserService) *AuthHandler {
 // RegisterHandler обрабатывает регистрацию.
 func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 	var req RegistrationUserReq
-
+	// TODO: сделать что нибудь с валидацией группы и учрежденя
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return

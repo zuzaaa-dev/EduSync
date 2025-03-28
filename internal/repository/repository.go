@@ -3,6 +3,7 @@ package repository
 import (
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
+	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"time"
@@ -47,4 +48,11 @@ type TeacherRepository interface {
 	CreateTeacher(ctx context.Context, userID, institutionID int) error
 	GetTeacherByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
 	GetTeachersByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
+}
+
+type SubjectRepository interface {
+	Create(ctx context.Context, name string, institutionID int) (int, error)
+	GetByID(ctx context.Context, id int) (*domainSubject.Subject, error)
+	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error)
+	GetByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error)
 }

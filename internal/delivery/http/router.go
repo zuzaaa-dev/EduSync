@@ -3,6 +3,7 @@ package http
 import (
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
+	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/delivery/middleware"
 	userRepository "EduSync/internal/repository"
@@ -15,7 +16,8 @@ func SetupRouter(tokenRepo userRepository.TokenRepository,
 	authHandler *user.AuthHandler,
 	jwtManager *util.JWTManager,
 	groupHandler *groupHandler.GroupHandler,
-	instHandler *instituteHandler.InstitutionHandler) *gin.Engine {
+	instHandler *instituteHandler.InstitutionHandler,
+	subjectHandler *subjectHandler.InstitutionHandler) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
@@ -28,6 +30,11 @@ func SetupRouter(tokenRepo userRepository.TokenRepository,
 		protected := api.Group("/")
 		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager))
 		{
+			subject := protected.Group("/subject")
+			{
+				subject.GET("/institution/:institution_id", subjectHandler.GetSubjectsByInstitution)
+				subject.GET("/group/:group_id", subjectHandler.GetSubjectsByGroup)
+			}
 			protected.GET("/profile", func(c *gin.Context) {
 				userID, _ := c.Get("user_id")
 				email, _ := c.Get("email")

@@ -3,6 +3,7 @@ package service
 import (
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
+	"EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"time"
@@ -27,4 +28,11 @@ type GroupService interface {
 type InstitutionService interface {
 	GetInstitutionByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
 	GetAllInstitutions(ctx context.Context) ([]*domainInstitution.Institution, error)
+}
+
+type SubjectService interface {
+	CreateSubject(ctx context.Context, name string, institutionID int) (int, error)
+	GetSubjectByID(ctx context.Context, id int) (*subject.Subject, error)
+	GetSubjectsByInstitutionID(ctx context.Context, institutionID int) ([]*subject.Subject, error)
+	GetSubjectsByGroupID(ctx context.Context, groupID int) ([]*subject.Subject, error)
 }
