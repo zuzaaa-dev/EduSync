@@ -97,3 +97,19 @@ func (r *subjectRepository) GetByGroupID(ctx context.Context, groupID int) ([]*d
 	}
 	return subjects, nil
 }
+
+// GetByNameAndInstitution получает список предметов по названию группы и id учреждения.
+func (r *subjectRepository) GetByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error) {
+	subject := &domainSubject.Subject{}
+	err := r.db.QueryRowContext(ctx, `SELECT id, name, institution_id
+		FROM subjects 
+		WHERE institution_id = $1 AND name = $2`, id, discipline).
+		Scan(&subject.ID, &subject.Name, &subject.InstitutionID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения предмета: %w", err)
+	}
+	return subject, nil
+}

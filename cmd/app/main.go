@@ -5,15 +5,19 @@ import (
 	"EduSync/internal/delivery/http"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
+	schedule2 "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
-	"EduSync/internal/integration/parser/rksi/group"
+	groupParser "EduSync/internal/integration/parser/rksi/group"
+	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
+	scheduleRepository "EduSync/internal/repository/schedule"
 	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
+	scheduleServ "EduSync/internal/service/schedule"
 	subjectServ "EduSync/internal/service/subject"
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
@@ -52,11 +56,12 @@ func main() {
 	tokenRepo := userRepository.NewTokenRepository(db)
 	groupRepo := groupRepository.NewGroupRepository(db)
 	subjectRepo := subjectRepository.NewSubjectRepository(db)
+	scheduleRepo := scheduleRepository.NewScheduleRepository(db)
 
 	institutionRepo := institutionRepository.NewRepository(db)
-	groupParser := group.NewGroupParser(cfg.UrlParserRKSI, logger)
+	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
+	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
 	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
-
 	authService := userService.NewAuthService(userRepo,
 		studentRepo,
 		teacherRepo,
@@ -64,14 +69,23 @@ func main() {
 		jwtManager,
 		logger,
 	)
+	groupService := groupServ.NewGroupService(groupRepo, groupParse, logger)
+	scheduleService := scheduleServ.NewScheduleService(
+		scheduleRepo,
+		scheduleParse,
+		subjectService,
+		authService,
+		groupRepo,
+		logger,
+	)
 
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
-	groupService := groupServ.NewGroupService(groupRepo, groupParser, logger)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
 	//go groupService.StartWorker(100 * time.Second)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService)
+	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo,
 		authHandler,
@@ -79,6 +93,8 @@ func main() {
 		groupHandle,
 		institutionHandler,
 		subjectHandle,
+		scheduleHandler,
+		logger,
 	)
 
 	// Запускаем сервер

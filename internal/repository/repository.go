@@ -3,6 +3,7 @@ package repository
 import (
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
+	domainSchedule "EduSync/internal/domain/schedule"
 	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
@@ -28,6 +29,7 @@ type GroupRepository interface {
 	SaveGroups(ctx context.Context, groups []*domainGroup.Group) error
 	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
 	GetById(ctx context.Context, groupId int) (*domainGroup.Group, error)
+	GetByName(ctx context.Context, name string) (*domainGroup.Group, error)
 }
 
 // InstitutionRepository описывает контракт доступа к данным учебных заведений.
@@ -48,6 +50,7 @@ type TeacherRepository interface {
 	CreateTeacher(ctx context.Context, userID, institutionID int) error
 	GetTeacherByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
 	GetTeachersByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
+	GetTeachersBySurname(ctx context.Context, surname string) ([]*domainUser.User, error)
 }
 
 type SubjectRepository interface {
@@ -55,4 +58,11 @@ type SubjectRepository interface {
 	GetByID(ctx context.Context, id int) (*domainSubject.Subject, error)
 	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error)
 	GetByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error)
+	GetByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error)
+}
+
+// ScheduleRepository описывает контракт доступа к данным расписания.
+type ScheduleRepository interface {
+	SaveSchedule(ctx context.Context, entries []*domainSchedule.Schedule) error
+	GetByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
 }

@@ -3,6 +3,7 @@ package util
 import (
 	"EduSync/internal/domain/user"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -35,12 +36,14 @@ func (jm *JWTManager) GenerateJWT(id int, isTeacher bool, email, fullName string
 }
 
 // ParseJWT разбирает и проверяет токен.
-func (jm *JWTManager) ParseJWT(tokenStr string) (*user.TokenClaims, error) {
+func (jm *JWTManager) ParseJWT(tokenStr string, log *logrus.Logger) (*user.TokenClaims, error) {
+	log.Infof("Парсинг JWT: %s", tokenStr)
 	claims := &user.TokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 		return jm.secretKey, nil
 	})
 	if err != nil || !token.Valid || claims.ExpiresAt.Time.Before(time.Now()) {
+		log.Errorf("Ошибка проверки токена JWT: %s", err)
 		return nil, err
 	}
 	return claims, nil

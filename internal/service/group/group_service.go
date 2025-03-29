@@ -2,8 +2,9 @@ package group
 
 import (
 	domainGroup "EduSync/internal/domain/group"
-	"EduSync/internal/integration/parser/rksi"
+	"EduSync/internal/integration/parser/rksi/group"
 	"EduSync/internal/repository"
+	"EduSync/internal/service"
 	"context"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -11,12 +12,12 @@ import (
 
 type Service struct {
 	repo   repository.GroupRepository
-	parser rksi.Parser // Интерфейс, описывающий методы парсинга групп
+	parser group.Parser // Интерфейс, описывающий методы парсинга групп
 	log    *logrus.Logger
 }
 
 // NewGroupService создает новый сервис групп.
-func NewGroupService(repo repository.GroupRepository, parser rksi.Parser, logger *logrus.Logger) *Service {
+func NewGroupService(repo repository.GroupRepository, parser group.Parser, logger *logrus.Logger) service.GroupService {
 	return &Service{
 		repo:   repo,
 		parser: parser,
@@ -25,10 +26,10 @@ func NewGroupService(repo repository.GroupRepository, parser rksi.Parser, logger
 }
 
 // UpdateGroups получает группы через парсер и сохраняет их в БД.
-func (s *Service) UpdateGroups() error {
+func (s *Service) UpdateGroups(ctx context.Context) error {
 	s.log.Info("Обновление групп")
-	// Парсим группы. Парсер внутри адаптера может возвращать слайс строк (названий групп)
-	groupNames, institutionId, err := s.parser.FetchGroups()
+
+	groupNames, institutionId, err := s.parser.FetchGroups(ctx)
 	if err != nil {
 		s.log.Errorf("Ошибка парсинга групп: %v", err)
 		return err
@@ -64,9 +65,10 @@ func (s *Service) GetGroupById(ctx context.Context, groupId int) (*domainGroup.G
 
 // Запуск воркера для периодического обновления групп (например, раз в 24 часа).
 func (s *Service) StartWorker(interval time.Duration) {
-	go func() {
+	ctx := context.Background()
+	go func(ctx context.Context) {
 		for {
-			err := s.UpdateGroups()
+			err := s.UpdateGroups(ctx)
 			if err != nil {
 				s.log.Errorf("Ошибка обновления групп: %v\n", err)
 			} else {
@@ -74,5 +76,5 @@ func (s *Service) StartWorker(interval time.Duration) {
 			}
 			time.Sleep(interval)
 		}
-	}()
+	}(ctx)
 }

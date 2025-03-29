@@ -43,3 +43,7 @@ func (s *subjectService) GetSubjectsByInstitutionID(ctx context.Context, institu
 func (s *subjectService) GetSubjectsByGroupID(ctx context.Context, groupID int) ([]*subject.Subject, error) {
 	return s.subjectRepo.GetByGroupID(ctx, groupID)
 }
+
+func (s *subjectService) GetSubjectByNameAndInstitution(ctx context.Context, discipline string, id int) (*subject.Subject, error) {
+	return s.subjectRepo.GetByNameAndInstitution(ctx, discipline, id)
+}

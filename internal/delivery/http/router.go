@@ -3,21 +3,27 @@ package http
 import (
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
+	scheduleHandler "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/delivery/middleware"
 	userRepository "EduSync/internal/repository"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
-func SetupRouter(tokenRepo userRepository.TokenRepository,
+func SetupRouter(
+	tokenRepo userRepository.TokenRepository,
 	authHandler *user.AuthHandler,
 	jwtManager *util.JWTManager,
 	groupHandler *groupHandler.GroupHandler,
 	instHandler *instituteHandler.InstitutionHandler,
-	subjectHandler *subjectHandler.InstitutionHandler) *gin.Engine {
+	subjectHandler *subjectHandler.InstitutionHandler,
+	scheduleHandler *scheduleHandler.ScheduleHandler,
+	log *logrus.Logger,
+) *gin.Engine {
 	router := gin.Default()
 
 	api := router.Group("/api")
@@ -28,8 +34,13 @@ func SetupRouter(tokenRepo userRepository.TokenRepository,
 		api.POST("/refresh", authHandler.RefreshTokenHandler)
 
 		protected := api.Group("/")
-		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager))
+		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager, log))
 		{
+			schedule := protected.Group("/schedule")
+			{
+				schedule.GET("/", scheduleHandler.GetScheduleHandler)
+				schedule.POST("/update", scheduleHandler.UpdateScheduleHandler)
+			}
 			subject := protected.Group("/subject")
 			{
 				subject.GET("/institution/:institution_id", subjectHandler.GetSubjectsByInstitution)

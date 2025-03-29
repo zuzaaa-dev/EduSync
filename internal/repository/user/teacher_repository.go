@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	domainUser "EduSync/internal/domain/user"
 )
@@ -64,5 +65,39 @@ func (r *teacherRepository) GetTeachersByInstitutionID(ctx context.Context, inst
 		}
 		teachers = append(teachers, teacher)
 	}
+	return teachers, nil
+}
+
+// GetTeachersBySurname возвращает преподавателей, у которых фамилия начинается с заданного значения.
+func (r *teacherRepository) GetTeachersBySurname(ctx context.Context, surname string) ([]*domainUser.User, error) {
+	// Предполагается, что полное имя хранится как "Фамилия Имя Отчество"
+	// Используем ILIKE для нечувствительности к регистру
+	query := `
+		SELECT id, email, password_hash, full_name, is_teacher
+		FROM users
+		WHERE is_teacher = TRUE AND full_name ILIKE $1
+	`
+	// Формируем шаблон: "Фамилия %"
+	pattern := surname + " %"
+	rows, err := r.db.QueryContext(ctx, query, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка запроса преподавателей: %w", err)
+	}
+	defer rows.Close()
+
+	var teachers []*domainUser.User
+	for rows.Next() {
+		teacher := new(domainUser.User)
+		err := rows.Scan(&teacher.ID, &teacher.Email, &teacher.PasswordHash, &teacher.FullName, &teacher.IsTeacher)
+		if err != nil {
+			return nil, fmt.Errorf("ошибка сканирования преподавателя: %w", err)
+		}
+		// Дополнительно убедимся, что фамилия точно совпадает (если, например, у кого-то фамилия похожая)
+		fullNameParts := strings.Fields(teacher.FullName)
+		if len(fullNameParts) > 0 && strings.EqualFold(fullNameParts[0], surname) {
+			teachers = append(teachers, teacher)
+		}
+	}
+
 	return teachers, nil
 }

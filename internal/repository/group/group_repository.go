@@ -79,3 +79,16 @@ func (r *GroupRepository) GetById(ctx context.Context, id int) (*domainGroup.Gro
 
 	return group, nil
 }
+
+func (r *GroupRepository) GetByName(ctx context.Context, name string) (*domainGroup.Group, error) {
+	group := &domainGroup.Group{}
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, name, institution_id 
+		FROM groups 
+		WHERE name = $1`, name).Scan(&group.ID, &group.Name, &group.InstitutionID)
+	if err != nil {
+		return nil, err
+	}
+
+	return group, nil
+}

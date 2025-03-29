@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 
@@ -10,7 +11,11 @@ import (
 )
 
 // JWTMiddleware проверяет JWT и сверяет его с базой данных.
-func JWTMiddleware(tokenRepo repository.TokenRepository, jwtManager *util.JWTManager) gin.HandlerFunc {
+func JWTMiddleware(
+	tokenRepo repository.TokenRepository,
+	jwtManager *util.JWTManager,
+	log *logrus.Logger,
+) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -28,10 +33,10 @@ func JWTMiddleware(tokenRepo repository.TokenRepository, jwtManager *util.JWTMan
 		}
 
 		tokenStr := parts[1]
-
 		// Парсим JWT
-		claims, err := jwtManager.ParseJWT(tokenStr)
+		claims, err := jwtManager.ParseJWT(tokenStr, log)
 		if err != nil {
+
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный или просроченный токен"})
 			c.Abort()
 			return

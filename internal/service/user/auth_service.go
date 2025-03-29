@@ -6,7 +6,9 @@ import (
 	"EduSync/internal/service"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 
 	"EduSync/internal/util"
@@ -139,7 +141,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, inputRefreshToken, userA
 		return "", "", errors.New("недействительный refresh-токен")
 	}
 
-	claims, err := s.jwtManager.ParseJWT(inputRefreshToken)
+	claims, err := s.jwtManager.ParseJWT(inputRefreshToken, s.log)
 	if err != nil {
 		return "", "", errors.New("недействительный или просроченный refresh-токен")
 	}
@@ -170,4 +172,46 @@ func (s *AuthService) RefreshToken(ctx context.Context, inputRefreshToken, userA
 	}
 
 	return accessToken, newRefreshToken, nil
+}
+
+// FindTeacherByName ищет преподавателя по строке с инициалами вида "Коноплев А.А."
+func (s *AuthService) FindTeacherByName(ctx context.Context, teacherStr string) (*domainUser.User, error) {
+	// Разбиваем входящую строку по пробелу
+	parts := strings.Fields(teacherStr)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("недостаточно данных в строке: %s", teacherStr)
+	}
+	surname := parts[0]
+	initialsProvided := strings.ReplaceAll(parts[1], ".", "") // Убираем точки, получаем, например, "АА"
+
+	// Получаем преподавателей по фамилии
+	teachers, err := s.teacherRepo.GetTeachersBySurname(ctx, surname)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения преподавателей: %w", err)
+	}
+
+	// Перебираем полученных преподавателей
+	for _, t := range teachers {
+		nameParts := strings.Fields(t.FullName)
+		if len(nameParts) < 2 {
+			continue
+		}
+		// Фамилия должна совпадать
+		if !strings.EqualFold(nameParts[0], surname) {
+			continue
+		}
+
+		var initials string
+		for _, part := range nameParts[1:] {
+			if len(part) > 0 {
+				initials += part[0:2]
+			}
+		}
+
+		if initials == initialsProvided {
+			return t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("преподаватель с инициалами %s не найден", teacherStr)
 }

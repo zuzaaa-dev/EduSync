@@ -2,57 +2,56 @@ package rksi
 
 import (
 	"bytes"
+	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 )
 
-// Parser описывает интерфейс для получения групп.
-type Parser interface {
-	FetchGroups() ([]string, int, error)
-}
+const (
+	defaultTimeout = 10 * time.Second
+)
 
-// FetchPage выполняет запрос к сайту и возвращает HTML-страницу.
-func FetchPage(targetURL string, params map[string]string) ([]byte, error) {
-	client := &http.Client{}
+// FetchHTML выполняет HTTP-запрос к сайту и возвращает HTML-страницу.
+func FetchHTML(ctx context.Context, URL string, params map[string]string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	defer cancel()
 
-	// Формируем тело POST-запроса, если есть параметры
-	var requestBody *bytes.Reader
-	if len(params) > 0 {
+	var req *http.Request
+	var err error
+
+	if len(params) == 0 {
+		req, err = http.NewRequestWithContext(ctx, "GET", URL, nil)
+	} else {
 		formData := url.Values{}
 		for key, value := range params {
 			formData.Set(key, value)
 		}
-		requestBody = bytes.NewReader([]byte(formData.Encode()))
-	} else {
-		requestBody = bytes.NewReader(nil)
+
+		req, err = http.NewRequestWithContext(ctx, "POST", URL, strings.NewReader(formData.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 
-	// Создаем HTTP-запрос
-	req, err := http.NewRequest("POST", targetURL, requestBody)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка создания запроса: %v", err)
+		return nil, fmt.Errorf("ошибка при создании запроса: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	// Выполняем запрос
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка выполнения запроса: %v", err)
+		return nil, fmt.Errorf("ошибка выполнения запроса: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Проверяем статус ответа
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("неожиданный статус ответа: %d", resp.StatusCode)
+		return nil, fmt.Errorf("неожиданный статус-код: %d", resp.StatusCode)
 	}
 
-	// Читаем тело ответа
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка чтения тела ответа: %v", err)
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(resp.Body); err != nil {
+		return nil, fmt.Errorf("ошибка чтения ответа: %w", err)
 	}
 
-	return body, nil
+	return buf.Bytes(), nil
 }
