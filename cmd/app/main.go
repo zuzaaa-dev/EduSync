@@ -53,8 +53,9 @@ func main() {
 	groupRepo := groupRepository.NewGroupRepository(db)
 	subjectRepo := subjectRepository.NewSubjectRepository(db)
 	scheduleRepo := scheduleRepository.NewScheduleRepository(db)
-
 	institutionRepo := institutionRepository.NewRepository(db)
+	emailMaskRepo := institutionRepository.NewEmailMaskRepository(db)
+
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
 	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
@@ -74,13 +75,13 @@ func main() {
 		groupRepo,
 		logger,
 	)
-
+	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
 	//go groupService.StartWorker(100 * time.Second)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
-	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService)
+	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo,

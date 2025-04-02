@@ -64,9 +64,12 @@ func SetupRouter(
 			group.GET("/institution/:institution_id", groupHandler.GetGroupsByInstitutionID)
 			group.GET("/:id", groupHandler.GetGroupByID)
 		}
-
-		api.GET("/institutions", instHandler.GetAllInstitutions)
-		api.GET("/institutions/:id", instHandler.GetInstitutionByID)
+		institutions := api.Group("/institutions")
+		{
+			institutions.GET("/", instHandler.GetAllInstitutions)
+			institutions.GET("/:id", instHandler.GetInstitutionByID)
+			institutions.GET("/mask", instHandler.GetAllMasks)
+		}
 
 	}
 

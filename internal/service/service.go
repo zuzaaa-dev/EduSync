@@ -32,6 +32,12 @@ type InstitutionService interface {
 	All(ctx context.Context) ([]*domainInstitution.Institution, error)
 }
 
+// EmailMaskService описывает бизнес-логику для работы с почтовыми масками.
+type EmailMaskService interface {
+	AllMasks(ctx context.Context) ([]*domainInstitution.EmailMask, error)
+	MaskByValue(ctx context.Context, mask string) (*domainInstitution.EmailMask, error)
+}
+
 type SubjectService interface {
 	Create(ctx context.Context, name string, institutionID int) (int, error)
 	ByID(ctx context.Context, id int) (*domainSubject.Subject, error)

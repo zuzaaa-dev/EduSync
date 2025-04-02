@@ -55,6 +55,12 @@ type InstitutionRepository interface {
 	All(ctx context.Context) ([]*domainInstitution.Institution, error)
 }
 
+// EmailMaskRepository описывает контракт доступа к почтовым маскам.
+type EmailMaskRepository interface {
+	All(ctx context.Context) ([]*domainInstitution.EmailMask, error)
+	ByEmailMask(ctx context.Context, mask string) (*domainInstitution.EmailMask, error)
+}
+
 type SubjectRepository interface {
 	Create(ctx context.Context, name string, institutionID int) (int, error)
 	ByID(ctx context.Context, id int) (*domainSubject.Subject, error)
