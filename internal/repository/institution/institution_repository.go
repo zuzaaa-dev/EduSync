@@ -18,7 +18,7 @@ func NewRepository(db *sql.DB) repository.InstitutionRepository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) GetByID(ctx context.Context, id int) (*domainInstitution.Institution, error) {
+func (r *Repository) ByID(ctx context.Context, id int) (*domainInstitution.Institution, error) {
 	inst := &domainInstitution.Institution{}
 	err := r.db.QueryRowContext(ctx, "SELECT id, name FROM institutions WHERE id = $1", id).
 		Scan(&inst.ID, &inst.Name)
@@ -31,7 +31,7 @@ func (r *Repository) GetByID(ctx context.Context, id int) (*domainInstitution.In
 	return inst, nil
 }
 
-func (r *Repository) GetAll(ctx context.Context) ([]*domainInstitution.Institution, error) {
+func (r *Repository) All(ctx context.Context) ([]*domainInstitution.Institution, error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT id, name FROM institutions")
 	if err != nil {
 		return nil, fmt.Errorf("ошибка получения учреждений: %v", err)

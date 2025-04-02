@@ -8,25 +8,25 @@ import (
 	"fmt"
 )
 
-// Repository обеспечивает работу с таблицей пользователей.
-type Repository struct {
+// userRepository обеспечивает работу с таблицей пользователей.
+type userRepository struct {
 	db *sql.DB
 }
 
 func NewUserRepository(db *sql.DB) repository.UserRepository {
-	return &Repository{db: db}
+	return &userRepository{db: db}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, user *domainUser.User) (int, error) {
+func (r *userRepository) Create(ctx context.Context, tx *sql.Tx, user *domainUser.User) (int, error) {
 	var userID int
-	err := r.db.QueryRowContext(ctx, `
+	err := tx.QueryRowContext(ctx, `
 		INSERT INTO users (email, password_hash, full_name, is_teacher)
 		VALUES ($1, $2, $3, $4) RETURNING id
 	`, user.Email, user.PasswordHash, user.FullName, user.IsTeacher).Scan(&userID)
 	return userID, err
 }
 
-func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error) {
+func (r *userRepository) ByEmail(ctx context.Context, email string) (*domainUser.User, error) {
 	user := &domainUser.User{}
 
 	err := r.db.QueryRowContext(ctx, `
@@ -41,4 +41,9 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*domainU
 		return nil, fmt.Errorf("ошибка получения пользователя: %w", err)
 	}
 	return user, err
+}
+
+// BeginTx запускает транзакцию.
+func (r *userRepository) BeginTx(ctx context.Context) (*sql.Tx, error) {
+	return r.db.BeginTx(ctx, nil)
 }

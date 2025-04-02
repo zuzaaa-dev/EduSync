@@ -41,8 +41,8 @@ func (r *subjectRepository) Create(ctx context.Context, name string, institution
 	return subjectID, nil
 }
 
-// GetByID получает предмет по его ID.
-func (r *subjectRepository) GetByID(ctx context.Context, id int) (*domainSubject.Subject, error) {
+// ByID получает предмет по его ID.
+func (r *subjectRepository) ByID(ctx context.Context, id int) (*domainSubject.Subject, error) {
 	subject := &domainSubject.Subject{}
 	err := r.db.QueryRowContext(ctx, `SELECT id, name, institution_id FROM subjects WHERE id = $1`, id).
 		Scan(&subject.ID, &subject.Name, &subject.InstitutionID)
@@ -55,8 +55,8 @@ func (r *subjectRepository) GetByID(ctx context.Context, id int) (*domainSubject
 	return subject, nil
 }
 
-// GetByInstitutionID получает список предметов по ID учебного заведения.
-func (r *subjectRepository) GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error) {
+// ByInstitutionID получает список предметов по ID учебного заведения.
+func (r *subjectRepository) ByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error) {
 	rows, err := r.db.QueryContext(ctx, `SELECT id, name, institution_id FROM subjects WHERE institution_id = $1`, institutionID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка получения предметов: %w", err)
@@ -74,8 +74,8 @@ func (r *subjectRepository) GetByInstitutionID(ctx context.Context, institutionI
 	return subjects, nil
 }
 
-// GetByGroupID получает список предметов по ID группы.
-func (r *subjectRepository) GetByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error) {
+// ByGroupID получает список предметов по ID группы.
+func (r *subjectRepository) ByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT s.id, s.name, s.institution_id 
 		FROM subjects s
@@ -98,8 +98,8 @@ func (r *subjectRepository) GetByGroupID(ctx context.Context, groupID int) ([]*d
 	return subjects, nil
 }
 
-// GetByNameAndInstitution получает список предметов по названию группы и id учреждения.
-func (r *subjectRepository) GetByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error) {
+// ByNameAndInstitution получает список предметов по названию группы и id учреждения.
+func (r *subjectRepository) ByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error) {
 	subject := &domainSubject.Subject{}
 	err := r.db.QueryRowContext(ctx, `SELECT id, name, institution_id
 		FROM subjects 

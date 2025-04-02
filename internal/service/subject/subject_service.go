@@ -20,8 +20,8 @@ func NewSubjectService(subjectRepo repository.SubjectRepository, log *logrus.Log
 	return &subjectService{subjectRepo: subjectRepo, log: log}
 }
 
-// CreateSubject создаёт предмет, если его ещё нет.
-func (s *subjectService) CreateSubject(ctx context.Context, name string, institutionID int) (int, error) {
+// Create создаёт предмет, если его ещё нет.
+func (s *subjectService) Create(ctx context.Context, name string, institutionID int) (int, error) {
 	s.log.Infof("Создание группы: %v, institutionID=%v", name, institutionID)
 	if name == "" {
 		return 0, errors.New("название предмета не может быть пустым")
@@ -29,21 +29,21 @@ func (s *subjectService) CreateSubject(ctx context.Context, name string, institu
 	return s.subjectRepo.Create(ctx, name, institutionID)
 }
 
-// GetSubjectByID получает предмет по ID.
-func (s *subjectService) GetSubjectByID(ctx context.Context, id int) (*subject.Subject, error) {
-	return s.subjectRepo.GetByID(ctx, id)
+// ByID получает предмет по ID.
+func (s *subjectService) ByID(ctx context.Context, id int) (*subject.Subject, error) {
+	return s.subjectRepo.ByID(ctx, id)
 }
 
-// GetSubjectsByInstitutionID получает список предметов по ID учебного заведения.
-func (s *subjectService) GetSubjectsByInstitutionID(ctx context.Context, institutionID int) ([]*subject.Subject, error) {
-	return s.subjectRepo.GetByInstitutionID(ctx, institutionID)
+// ByInstitutionID получает список предметов по ID учебного заведения.
+func (s *subjectService) ByInstitutionID(ctx context.Context, institutionID int) ([]*subject.Subject, error) {
+	return s.subjectRepo.ByInstitutionID(ctx, institutionID)
 }
 
-// GetSubjectsByGroupID получает список предметов по ID группы.
-func (s *subjectService) GetSubjectsByGroupID(ctx context.Context, groupID int) ([]*subject.Subject, error) {
-	return s.subjectRepo.GetByGroupID(ctx, groupID)
+// ByGroupID получает список предметов по ID группы.
+func (s *subjectService) ByGroupID(ctx context.Context, groupID int) ([]*subject.Subject, error) {
+	return s.subjectRepo.ByGroupID(ctx, groupID)
 }
 
-func (s *subjectService) GetSubjectByNameAndInstitution(ctx context.Context, discipline string, id int) (*subject.Subject, error) {
-	return s.subjectRepo.GetByNameAndInstitution(ctx, discipline, id)
+func (s *subjectService) ByNameAndInstitution(ctx context.Context, discipline string, id int) (*subject.Subject, error) {
+	return s.subjectRepo.ByNameAndInstitution(ctx, discipline, id)
 }

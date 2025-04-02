@@ -25,8 +25,8 @@ func NewGroupService(repo repository.GroupRepository, parser group.Parser, logge
 	}
 }
 
-// UpdateGroups получает группы через парсер и сохраняет их в БД.
-func (s *Service) UpdateGroups(ctx context.Context) error {
+// Update получает группы через парсер и сохраняет их в БД.
+func (s *Service) Update(ctx context.Context) error {
 	s.log.Info("Обновление групп")
 
 	groupNames, institutionId, err := s.parser.FetchGroups(ctx)
@@ -44,7 +44,7 @@ func (s *Service) UpdateGroups(ctx context.Context) error {
 	}
 
 	// Сохраняем группы в БД
-	if err := s.repo.SaveGroups(context.Background(), groups); err != nil {
+	if err := s.repo.Save(context.Background(), groups); err != nil {
 		s.log.Errorf("Ошибка парсинга групп: %v", err)
 		return err
 	}
@@ -52,15 +52,15 @@ func (s *Service) UpdateGroups(ctx context.Context) error {
 	return nil
 }
 
-// GetGroupsByInstitutionID возвращает группы для заданного учреждения.
-func (s *Service) GetGroupsByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
+// ByInstitutionID возвращает группы для заданного учреждения.
+func (s *Service) ByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
 	s.log.Infof("Получение группы по id учреждения: %d", institutionID)
-	return s.repo.GetByInstitutionID(ctx, institutionID)
+	return s.repo.ByInstitutionID(ctx, institutionID)
 }
 
-func (s *Service) GetGroupById(ctx context.Context, groupId int) (*domainGroup.Group, error) {
+func (s *Service) ById(ctx context.Context, groupId int) (*domainGroup.Group, error) {
 	s.log.Infof("Получение группы по id группы: %d", groupId)
-	return s.repo.GetById(ctx, groupId)
+	return s.repo.ById(ctx, groupId)
 }
 
 // Запуск воркера для периодического обновления групп (например, раз в 24 часа).
@@ -68,7 +68,7 @@ func (s *Service) StartWorker(interval time.Duration) {
 	ctx := context.Background()
 	go func(ctx context.Context) {
 		for {
-			err := s.UpdateGroups(ctx)
+			err := s.Update(ctx)
 			if err != nil {
 				s.log.Errorf("Ошибка обновления групп: %v\n", err)
 			} else {

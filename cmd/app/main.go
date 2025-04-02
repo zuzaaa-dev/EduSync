@@ -44,11 +44,7 @@ func main() {
 
 	// Инициализируем JWTManager с секретным ключом
 	jwtManager := util.NewJWTManager(cfg.JWTSecret)
-	// TODO Реализовать schedule
-	// TODO проврки: есть ли группа по названию
-	// TODO проврки: subject, если нет, то добавить предмет
-	// TODO проврки: date распарсить значения
-	// TODO проврки: teacher_id оставть null, если не нашлось teacher_id с Ф.И.О
+
 	// Инициализируем репозитории и сервисы
 	userRepo := userRepository.NewUserRepository(db)
 	studentRepo := userRepository.NewStudentRepository(db)

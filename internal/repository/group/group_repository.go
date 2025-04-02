@@ -18,7 +18,7 @@ func NewGroupRepository(db *sql.DB) repository.GroupRepository {
 }
 
 // SaveGroups сохраняет группы в БД. Здесь можно реализовать логику обновления (UPSERT) или простое добавление.
-func (r *GroupRepository) SaveGroups(ctx context.Context, groups []*domainGroup.Group) error {
+func (r *GroupRepository) Save(ctx context.Context, groups []*domainGroup.Group) error {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (r *GroupRepository) SaveGroups(ctx context.Context, groups []*domainGroup.
 	return tx.Commit()
 }
 
-func (r *GroupRepository) GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
+func (r *GroupRepository) ByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, name, institution_id 
 		FROM groups 
@@ -67,7 +67,7 @@ func (r *GroupRepository) GetByInstitutionID(ctx context.Context, institutionID 
 	return groups, nil
 }
 
-func (r *GroupRepository) GetById(ctx context.Context, id int) (*domainGroup.Group, error) {
+func (r *GroupRepository) ById(ctx context.Context, id int) (*domainGroup.Group, error) {
 	group := &domainGroup.Group{}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, name, institution_id 
@@ -80,7 +80,7 @@ func (r *GroupRepository) GetById(ctx context.Context, id int) (*domainGroup.Gro
 	return group, nil
 }
 
-func (r *GroupRepository) GetByName(ctx context.Context, name string) (*domainGroup.Group, error) {
+func (r *GroupRepository) ByName(ctx context.Context, name string) (*domainGroup.Group, error) {
 	group := &domainGroup.Group{}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, name, institution_id 

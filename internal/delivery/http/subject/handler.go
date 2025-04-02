@@ -30,7 +30,7 @@ func (h *InstitutionHandler) CreateSubjectHandler(c *gin.Context) {
 		return
 	}
 
-	subjectID, err := h.subjectService.CreateSubject(c.Request.Context(), req.Name, req.InstitutionID)
+	subjectID, err := h.subjectService.Create(c.Request.Context(), req.Name, req.InstitutionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -50,7 +50,7 @@ func (h *InstitutionHandler) GetSubjectsByInstitution(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "неправильный аргумент"})
 		return
 	}
-	subjects, err := h.subjectService.GetSubjectsByInstitutionID(c.Request.Context(), institutionID)
+	subjects, err := h.subjectService.ByInstitutionID(c.Request.Context(), institutionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -73,7 +73,7 @@ func (h *InstitutionHandler) GetSubjectsByGroup(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "неправильный аргумент"})
 		return
 	}
-	subjects, err := h.subjectService.GetSubjectsByGroupID(c.Request.Context(), groupID)
+	subjects, err := h.subjectService.ByGroupID(c.Request.Context(), groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

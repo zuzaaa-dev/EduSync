@@ -7,62 +7,64 @@ import (
 	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
+	"database/sql"
 	"time"
 )
 
 // UserRepository описывает контракт для работы с пользователями.
 type UserRepository interface {
-	CreateUser(ctx context.Context, user *domainUser.User) (int, error)
-	GetUserByEmail(ctx context.Context, email string) (*domainUser.User, error)
-}
-
-type TokenRepository interface {
-	DeleteTokensForUser(ctx context.Context, userID int) error
-	SaveToken(ctx context.Context, userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error
-	RevokeToken(ctx context.Context, accessToken string) error
-	IsTokenValid(ctx context.Context, accessToken string) (bool, error)
-	IsRefreshTokenValid(ctx context.Context, refreshToken string) (bool, error)
-}
-
-// GroupRepository описывает контракт для работы с группами.
-type GroupRepository interface {
-	SaveGroups(ctx context.Context, groups []*domainGroup.Group) error
-	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
-	GetById(ctx context.Context, groupId int) (*domainGroup.Group, error)
-	GetByName(ctx context.Context, name string) (*domainGroup.Group, error)
-}
-
-// InstitutionRepository описывает контракт доступа к данным учебных заведений.
-type InstitutionRepository interface {
-	GetByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
-	GetAll(ctx context.Context) ([]*domainInstitution.Institution, error)
+	BeginTx(ctx context.Context) (*sql.Tx, error)
+	Create(ctx context.Context, tx *sql.Tx, user *domainUser.User) (int, error)
+	ByEmail(ctx context.Context, email string) (*domainUser.User, error)
 }
 
 // StudentRepository описывает контракт для работы со студентами.
 type StudentRepository interface {
-	CreateStudent(ctx context.Context, userID, institutionID, groupID int) error
-	GetStudentByUserID(ctx context.Context, userID int) (*domainUser.Student, error)
-	GetStudentsByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error)
+	Create(ctx context.Context, tx *sql.Tx, userID, institutionID, groupID int) error
+	ByUserID(ctx context.Context, userID int) (*domainUser.Student, error)
+	ByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error)
 }
 
 // TeacherRepository описывает контракт для работы с преподавателями.
 type TeacherRepository interface {
-	CreateTeacher(ctx context.Context, userID, institutionID int) error
-	GetTeacherByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
-	GetTeachersByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
-	GetTeachersBySurname(ctx context.Context, surname string) ([]*domainUser.User, error)
+	Create(ctx context.Context, tx *sql.Tx, userID, institutionID int) error
+	ByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
+	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
+	BySurname(ctx context.Context, surname string) ([]*domainUser.User, error)
+}
+
+type TokenRepository interface {
+	DeleteForUser(ctx context.Context, userID int) error
+	Save(ctx context.Context, userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error
+	Revoke(ctx context.Context, accessToken string) error
+	IsValid(ctx context.Context, accessToken string) (bool, error)
+	IsRefreshValid(ctx context.Context, refreshToken string) (bool, error)
+}
+
+// GroupRepository описывает контракт для работы с группами.
+type GroupRepository interface {
+	Save(ctx context.Context, groups []*domainGroup.Group) error
+	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
+	ById(ctx context.Context, groupId int) (*domainGroup.Group, error)
+	ByName(ctx context.Context, name string) (*domainGroup.Group, error)
+}
+
+// InstitutionRepository описывает контракт доступа к данным учебных заведений.
+type InstitutionRepository interface {
+	ByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
+	All(ctx context.Context) ([]*domainInstitution.Institution, error)
 }
 
 type SubjectRepository interface {
 	Create(ctx context.Context, name string, institutionID int) (int, error)
-	GetByID(ctx context.Context, id int) (*domainSubject.Subject, error)
-	GetByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error)
-	GetByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error)
-	GetByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error)
+	ByID(ctx context.Context, id int) (*domainSubject.Subject, error)
+	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error)
+	ByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error)
+	ByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error)
 }
 
 // ScheduleRepository описывает контракт доступа к данным расписания.
 type ScheduleRepository interface {
-	SaveSchedule(ctx context.Context, entries []*domainSchedule.Schedule) error
-	GetByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
+	Save(ctx context.Context, entries []*domainSchedule.Schedule) error
+	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
 }

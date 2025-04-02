@@ -26,7 +26,7 @@ func (h *InstitutionHandler) GetInstitutionByID(c *gin.Context) {
 		return
 	}
 
-	inst, err := h.instService.GetInstitutionByID(c.Request.Context(), id)
+	inst, err := h.instService.ByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -40,7 +40,7 @@ func (h *InstitutionHandler) GetInstitutionByID(c *gin.Context) {
 
 // GetAllInstitutions возвращает список всех учреждений.
 func (h *InstitutionHandler) GetAllInstitutions(c *gin.Context) {
-	insts, err := h.instService.GetAllInstitutions(c.Request.Context())
+	insts, err := h.instService.All(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

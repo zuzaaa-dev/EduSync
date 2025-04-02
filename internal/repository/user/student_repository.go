@@ -19,16 +19,16 @@ func NewStudentRepository(db *sql.DB) repository.StudentRepository {
 	return &studentRepository{db: db}
 }
 
-// CreateStudent добавляет запись в таблицу students.
-func (r *studentRepository) CreateStudent(ctx context.Context, userID, institutionID, groupID int) error {
+// Create добавляет запись в таблицу students.
+func (r *studentRepository) Create(ctx context.Context, tx *sql.Tx, userID, institutionID, groupID int) error {
 	var err error
 	if groupID > 0 {
-		_, err = r.db.ExecContext(ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO students (user_id, institution_id, group_id)
 			VALUES ($1, $2, $3)
 		`, userID, institutionID, groupID)
 	} else {
-		_, err = r.db.ExecContext(ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO students (user_id, institution_id)
 			VALUES ($1, $2)
 		`, userID, institutionID)
@@ -39,8 +39,8 @@ func (r *studentRepository) CreateStudent(ctx context.Context, userID, instituti
 	return nil
 }
 
-// GetStudentByUserID получает студента по user_id.
-func (r *studentRepository) GetStudentByUserID(ctx context.Context, userID int) (*domainUser.Student, error) {
+// ByUserID получает студента по user_id.
+func (r *studentRepository) ByUserID(ctx context.Context, userID int) (*domainUser.Student, error) {
 	student := &domainUser.Student{}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT user_id, institution_id, group_id FROM students WHERE user_id = $1
@@ -54,8 +54,8 @@ func (r *studentRepository) GetStudentByUserID(ctx context.Context, userID int) 
 	return student, nil
 }
 
-// GetStudentsByGroupID получает список студентов по group_id.
-func (r *studentRepository) GetStudentsByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error) {
+// ByGroupID получает список студентов по group_id.
+func (r *studentRepository) ByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT user_id, institution_id, group_id FROM students WHERE group_id = $1
 	`, groupID)

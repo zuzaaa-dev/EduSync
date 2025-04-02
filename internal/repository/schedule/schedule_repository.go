@@ -18,9 +18,9 @@ func NewScheduleRepository(db *sql.DB) repository.ScheduleRepository {
 	return &PostgresScheduleRepository{db: db}
 }
 
-// SaveSchedule сохраняет записи расписания в БД.
+// Save сохраняет записи расписания в БД.
 // Здесь можно использовать транзакцию для пакетной вставки.
-func (r *PostgresScheduleRepository) SaveSchedule(ctx context.Context, entries []*domainSchedule.Schedule) error {
+func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domainSchedule.Schedule) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("не удалось начать транзакцию: %v", err)
@@ -57,8 +57,8 @@ func (r *PostgresScheduleRepository) SaveSchedule(ctx context.Context, entries [
 	return tx.Commit()
 }
 
-// GetByGroupID возвращает расписание для заданной группы.
-func (r *PostgresScheduleRepository) GetByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
+// ByGroupID возвращает расписание для заданной группы.
+func (r *PostgresScheduleRepository) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, group_id, subject_id, date, pair_number, classroom, teacher_id, teacher_initials, start_time, end_time
 		FROM schedule

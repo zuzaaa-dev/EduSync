@@ -26,9 +26,17 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
+	if req.InstitutionID < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Поле institution_id не может быть отрицательным"})
+		return
+	}
+	if req.GroupID <= 0 && !*req.IsTeacher {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Поле group_id не может быть отрицательным"})
+		return
+	}
 	converter, err := req.ConvertToSvc()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка создания пользователя"})
 		return
 	}
 	userID, err := h.authService.Register(c.Request.Context(), converter)

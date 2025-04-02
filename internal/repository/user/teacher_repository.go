@@ -20,9 +20,9 @@ func NewTeacherRepository(db *sql.DB) repository.TeacherRepository {
 	return &teacherRepository{db: db}
 }
 
-// CreateTeacher добавляет запись в таблицу teachers.
-func (r *teacherRepository) CreateTeacher(ctx context.Context, userID, institutionID int) error {
-	_, err := r.db.ExecContext(ctx, `
+// Create добавляет запись в таблицу teachers.
+func (r *teacherRepository) Create(ctx context.Context, tx *sql.Tx, userID, institutionID int) error {
+	_, err := tx.ExecContext(ctx, `
 		INSERT INTO teachers (user_id, institution_id)
 		VALUES ($1, $2)
 	`, userID, institutionID)
@@ -32,8 +32,8 @@ func (r *teacherRepository) CreateTeacher(ctx context.Context, userID, instituti
 	return nil
 }
 
-// GetTeacherByUserID получает преподавателя по user_id.
-func (r *teacherRepository) GetTeacherByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error) {
+// ByUserID получает преподавателя по user_id.
+func (r *teacherRepository) ByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error) {
 	teacher := &domainUser.Teacher{}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT user_id, institution_id FROM teachers WHERE user_id = $1
@@ -47,8 +47,8 @@ func (r *teacherRepository) GetTeacherByUserID(ctx context.Context, userID int) 
 	return teacher, nil
 }
 
-// GetTeachersByInstitutionID получает список преподавателей по institution_id.
-func (r *teacherRepository) GetTeachersByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error) {
+// ByInstitutionID получает список преподавателей по institution_id.
+func (r *teacherRepository) ByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT user_id, institution_id FROM teachers WHERE institution_id = $1
 	`, institutionID)
@@ -68,8 +68,8 @@ func (r *teacherRepository) GetTeachersByInstitutionID(ctx context.Context, inst
 	return teachers, nil
 }
 
-// GetTeachersBySurname возвращает преподавателей, у которых фамилия начинается с заданного значения.
-func (r *teacherRepository) GetTeachersBySurname(ctx context.Context, surname string) ([]*domainUser.User, error) {
+// BySurname возвращает преподавателей, у которых фамилия начинается с заданного значения.
+func (r *teacherRepository) BySurname(ctx context.Context, surname string) ([]*domainUser.User, error) {
 	// Предполагается, что полное имя хранится как "Фамилия Имя Отчество"
 	// Используем ILIKE для нечувствительности к регистру
 	query := `

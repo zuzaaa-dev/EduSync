@@ -21,12 +21,12 @@ func NewInstitutionService(repo repository.InstitutionRepository, logger *logrus
 	}
 }
 
-func (s *Service) GetInstitutionByID(ctx context.Context, id int) (*domainInstitution.Institution, error) {
+func (s *Service) ByID(ctx context.Context, id int) (*domainInstitution.Institution, error) {
 	s.log.Infof("Получение учреждения по id: %d", id)
-	return s.repo.GetByID(ctx, id)
+	return s.repo.ByID(ctx, id)
 }
 
-func (s *Service) GetAllInstitutions(ctx context.Context) ([]*domainInstitution.Institution, error) {
+func (s *Service) All(ctx context.Context) ([]*domainInstitution.Institution, error) {
 	s.log.Info("Получение списка всех учебных заведений")
-	return s.repo.GetAll(ctx)
+	return s.repo.All(ctx)
 }

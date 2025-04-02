@@ -4,7 +4,7 @@ import (
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
 	domainSchedule "EduSync/internal/domain/schedule"
-	"EduSync/internal/domain/subject"
+	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
 	"time"
@@ -20,29 +20,29 @@ type UserService interface {
 
 // GroupService описывает контракт для работы с группами.
 type GroupService interface {
-	GetGroupsByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
-	GetGroupById(ctx context.Context, groupId int) (*domainGroup.Group, error)
+	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainGroup.Group, error)
+	ById(ctx context.Context, groupId int) (*domainGroup.Group, error)
 	StartWorker(interval time.Duration)
-	UpdateGroups(ctx context.Context) error
+	Update(ctx context.Context) error
 }
 
 // InstitutionService описывает методы работы с учебными заведениями.
 type InstitutionService interface {
-	GetInstitutionByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
-	GetAllInstitutions(ctx context.Context) ([]*domainInstitution.Institution, error)
+	ByID(ctx context.Context, id int) (*domainInstitution.Institution, error)
+	All(ctx context.Context) ([]*domainInstitution.Institution, error)
 }
 
 type SubjectService interface {
-	CreateSubject(ctx context.Context, name string, institutionID int) (int, error)
-	GetSubjectByID(ctx context.Context, id int) (*subject.Subject, error)
-	GetSubjectsByInstitutionID(ctx context.Context, institutionID int) ([]*subject.Subject, error)
-	GetSubjectsByGroupID(ctx context.Context, groupID int) ([]*subject.Subject, error)
-	GetSubjectByNameAndInstitution(ctx context.Context, discipline string, id int) (*subject.Subject, error)
+	Create(ctx context.Context, name string, institutionID int) (int, error)
+	ByID(ctx context.Context, id int) (*domainSubject.Subject, error)
+	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainSubject.Subject, error)
+	ByGroupID(ctx context.Context, groupID int) ([]*domainSubject.Subject, error)
+	ByNameAndInstitution(ctx context.Context, discipline string, id int) (*domainSubject.Subject, error)
 }
 
 // ScheduleService описывает методы работы с расписанием.
 type ScheduleService interface {
-	UpdateSchedule(ctx context.Context, groupName string) error
-	GetScheduleByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
+	Update(ctx context.Context, groupName string) error
+	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
 	StartWorker(interval time.Duration, groupID int, groupName string)
 }

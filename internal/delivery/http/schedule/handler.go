@@ -27,7 +27,7 @@ func (h *ScheduleHandler) UpdateScheduleHandler(c *gin.Context) {
 		return
 	}
 
-	err := h.scheduleService.UpdateSchedule(c.Request.Context(), groupName)
+	err := h.scheduleService.Update(c.Request.Context(), groupName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -50,7 +50,7 @@ func (h *ScheduleHandler) GetScheduleHandler(c *gin.Context) {
 		return
 	}
 
-	scheduleEntries, err := h.scheduleService.GetScheduleByGroupID(c.Request.Context(), groupID)
+	scheduleEntries, err := h.scheduleService.ByGroupID(c.Request.Context(), groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

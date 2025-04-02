@@ -40,8 +40,8 @@ func NewScheduleService(
 	}
 }
 
-// UpdateSchedule получает расписание с сайта, выполняет проверки и сохраняет его в БД.
-func (s *scheduleService) UpdateSchedule(ctx context.Context, groupName string) error {
+// Update получает расписание с сайта, выполняет проверки и сохраняет его в БД.
+func (s *scheduleService) Update(ctx context.Context, groupName string) error {
 	s.log.Infof("Обновление расписания для группы: %s (id: %d)", groupName)
 
 	// Получаем расписание с помощью парсера
@@ -51,7 +51,7 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, groupName string) 
 		return fmt.Errorf("ошибка парсинга расписания")
 	}
 
-	group, err := s.groupRepo.GetByName(ctx, groupName)
+	group, err := s.groupRepo.ByName(ctx, groupName)
 	if err != nil {
 		s.log.Errorf("ошибка получения id группы: %v", err)
 		return fmt.Errorf("ошибка получения группы")
@@ -77,19 +77,19 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, groupName string) 
 		}
 
 		// Проверяем предмет: если не существует, добавляем его через subjectSvc
-		subj, err := s.subjectSvc.GetSubjectByNameAndInstitution(ctx, pe.Discipline, s.parser.InstitutionID)
+		subj, err := s.subjectSvc.ByNameAndInstitution(ctx, pe.Discipline, s.parser.InstitutionID)
 		if err != nil {
 			s.log.Errorf("ошибка поиска предмета: %v", err)
 			continue
 		}
 		if subj == nil {
-			subjID, err := s.subjectSvc.CreateSubject(ctx, pe.Discipline, s.parser.InstitutionID)
+			subjID, err := s.subjectSvc.Create(ctx, pe.Discipline, s.parser.InstitutionID)
 			if err != nil {
 				s.log.Errorf("ошибка создания предмета: %v", err)
 				continue
 			}
 			// Получаем предмет после создания
-			subj, err = s.subjectSvc.GetSubjectByID(ctx, subjID)
+			subj, err = s.subjectSvc.ByID(ctx, subjID)
 			if err != nil {
 				s.log.Errorf("ошибка получения предмета: %v", err)
 				continue
@@ -112,7 +112,7 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, groupName string) 
 		}
 
 		entry := &domainSchedule.Schedule{
-			GroupID:         groupID, // TODO заменить на id из реальной группы
+			GroupID:         groupID,
 			SubjectID:       subj.ID,
 			Date:            pe.Date,
 			PairNumber:      pairNumber, // Здесь можно добавить парсинг номера пары, если он есть
@@ -127,7 +127,7 @@ func (s *scheduleService) UpdateSchedule(ctx context.Context, groupName string) 
 	}
 
 	// Сохраняем расписание в БД
-	err = s.repo.SaveSchedule(ctx, entries)
+	err = s.repo.Save(ctx, entries)
 	if err != nil {
 		s.log.Errorf("ошибка сохранения расписания: %v", err)
 		return fmt.Errorf("ошибка сохранения расписания")
@@ -141,16 +141,16 @@ func combineTime(date, t time.Time) time.Time {
 	return time.Date(date.Year(), date.Month(), date.Day(), t.Hour(), t.Minute(), t.Second(), 0, date.Location())
 }
 
-// GetScheduleByGroupID возвращает расписание для заданной группы.
-func (s *scheduleService) GetScheduleByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
-	return s.repo.GetByGroupID(ctx, groupID)
+// ByGroupID возвращает расписание для заданной группы.
+func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
+	return s.repo.ByGroupID(ctx, groupID)
 }
 
 // StartWorker запускает периодическое обновление расписания для заданной группы.
 func (s *scheduleService) StartWorker(interval time.Duration, groupID int, groupName string) {
 	go func() {
 		for {
-			err := s.UpdateSchedule(context.Background(), groupName)
+			err := s.Update(context.Background(), groupName)
 			if err != nil {
 				s.log.Errorf("Ошибка обновления расписания: %v", err)
 			} else {
