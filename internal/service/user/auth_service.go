@@ -18,12 +18,13 @@ import (
 
 // AuthService управляет процессами регистрации, авторизации и логаута.
 type AuthService struct {
-	userRepo    repository.UserRepository
-	studentRepo repository.StudentRepository
-	teacherRepo repository.TeacherRepository
-	tokenRepo   repository.TokenRepository
-	jwtManager  *util.JWTManager
-	log         *logrus.Logger
+	userRepo          repository.UserRepository
+	studentRepo       repository.StudentRepository
+	teacherRepo       repository.TeacherRepository
+	tokenRepo         repository.TokenRepository
+	instEmailMaskRepo repository.EmailMaskRepository
+	jwtManager        *util.JWTManager
+	log               *logrus.Logger
 }
 
 // NewAuthService создает новый экземпляр AuthService.
@@ -31,20 +32,39 @@ func NewAuthService(userRepo repository.UserRepository,
 	studentRepo repository.StudentRepository,
 	teacherRepo repository.TeacherRepository,
 	tokenRepo repository.TokenRepository,
+	instEmailMaskRepo repository.EmailMaskRepository,
 	jwtManager *util.JWTManager,
 	log *logrus.Logger) service.UserService {
 	return &AuthService{userRepo: userRepo,
-		studentRepo: studentRepo,
-		teacherRepo: teacherRepo,
-		tokenRepo:   tokenRepo,
-		jwtManager:  jwtManager,
-		log:         log,
+		studentRepo:       studentRepo,
+		teacherRepo:       teacherRepo,
+		tokenRepo:         tokenRepo,
+		instEmailMaskRepo: instEmailMaskRepo,
+		jwtManager:        jwtManager,
+		log:               log,
 	}
 }
 
 // Register создает нового пользователя.
 func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) (int, error) {
 	s.log.Infof("Регистрация пользователя с email: %s", user.Email)
+	if user.IsTeacher {
+		emailMask, err := user.EmailMask()
+		if err != nil {
+			s.log.Errorf("Ошибка проверки маски: %v", err)
+			return 0, err
+		}
+		maskValid, err := s.instEmailMaskRepo.ByEmailMask(ctx, emailMask)
+		if err != nil {
+			s.log.Errorf("Ошибка получения маски: %v", err)
+			return 0, err
+		}
+		if maskValid == nil {
+			s.log.Errorf("Ошибка, маски не сущетсвует: %v", err)
+			return 0, errors.New("email не поддерживается учреждением")
+		}
+	}
+
 	// Проверяем, существует ли пользователь с таким email.
 	existingUser, err := s.userRepo.ByEmail(ctx, user.Email)
 	if err != nil {

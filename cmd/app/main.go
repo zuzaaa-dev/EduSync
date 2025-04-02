@@ -63,6 +63,7 @@ func main() {
 		studentRepo,
 		teacherRepo,
 		tokenRepo,
+		emailMaskRepo,
 		jwtManager,
 		logger,
 	)

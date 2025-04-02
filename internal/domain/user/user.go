@@ -1,5 +1,10 @@
 package user
 
+import (
+	"errors"
+	"strings"
+)
+
 // User представляет пользователя системы.
 type User struct {
 	ID           int
@@ -19,6 +24,17 @@ type CreateUser struct {
 	GroupID       int
 }
 
+func (c *CreateUser) EmailMask() (string, error) {
+	// Разделяем email по символу @
+	parts := strings.Split(c.Email, "@")
+	if len(parts) != 2 {
+		return "", errors.New("некорректный формат email")
+	}
+
+	// Возвращаем доменную часть
+	return parts[1], nil
+}
+
 type Student struct {
 	UserID        int
 	InstitutionID int
@@ -30,11 +46,11 @@ type Teacher struct {
 	InstitutionID int
 }
 
-func (r *CreateUser) ConvertToUser(passwordHash []byte) *User {
+func (c *CreateUser) ConvertToUser(passwordHash []byte) *User {
 	return &User{
-		Email:        r.Email,
+		Email:        c.Email,
 		PasswordHash: passwordHash,
-		FullName:     r.FullName,
-		IsTeacher:    r.IsTeacher,
+		FullName:     c.FullName,
+		IsTeacher:    c.IsTeacher,
 	}
 }
