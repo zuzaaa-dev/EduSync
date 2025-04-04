@@ -26,11 +26,16 @@ import (
 
 func main() {
 	// Загружаем конфигурацию
-	cfg := config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	// Инициализируем логгер
 	util.InitLogger(cfg.LogLevel)
 	logger := util.Logger
+
+	logger.Infof(cfg.DatabaseURL)
 
 	// Подключаемся к БД
 	db, err := config.InitDB(cfg.DatabaseURL, logger)

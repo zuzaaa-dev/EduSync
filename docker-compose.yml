@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  app:
+    build: .
+    container_name: edusync_app
+    ports:
+      - "${SERVER_PORT}:8080"
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - edusync_network
+
+  db:
+    image: postgres:17-alpine
+    container_name: edusync_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - edusync_network
+
+volumes:
+  db_data:
+
+networks:
+  edusync_network:
+    driver: bridge
