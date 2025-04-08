@@ -23,7 +23,7 @@ func NewScheduleHandler(scheduleService service.ScheduleService) *ScheduleHandle
 func (h *ScheduleHandler) UpdateScheduleHandler(c *gin.Context) {
 	groupName := c.Query("group_name")
 	if groupName == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "group_id и group_name обязательны"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "group_name обязательны"})
 		return
 	}
 

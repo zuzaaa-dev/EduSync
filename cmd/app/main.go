@@ -3,6 +3,7 @@ package main
 import (
 	"EduSync/internal/config"
 	"EduSync/internal/delivery/http"
+	chat3 "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
 	schedule2 "EduSync/internal/delivery/http/schedule"
@@ -10,11 +11,13 @@ import (
 	"EduSync/internal/delivery/http/user"
 	groupParser "EduSync/internal/integration/parser/rksi/group"
 	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
+	"EduSync/internal/repository/chat"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
 	scheduleRepository "EduSync/internal/repository/schedule"
 	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
+	chat2 "EduSync/internal/service/chat"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
 	scheduleServ "EduSync/internal/service/schedule"
@@ -60,6 +63,7 @@ func main() {
 	scheduleRepo := scheduleRepository.NewScheduleRepository(db)
 	institutionRepo := institutionRepository.NewRepository(db)
 	emailMaskRepo := institutionRepository.NewEmailMaskRepository(db)
+	chatRepo := chat.NewChatRepository(db)
 
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
@@ -81,6 +85,9 @@ func main() {
 		groupRepo,
 		logger,
 	)
+
+	chatSvc := chat2.NewChatService(chatRepo, logger)
+
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
@@ -89,6 +96,7 @@ func main() {
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
+	chatHandler := chat3.NewChatHandler(chatSvc)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo,
 		authHandler,
@@ -97,6 +105,7 @@ func main() {
 		institutionHandler,
 		subjectHandle,
 		scheduleHandler,
+		chatHandler,
 		logger,
 	)
 

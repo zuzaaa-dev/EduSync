@@ -1,6 +1,7 @@
 package service
 
 import (
+	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
 	domainSchedule "EduSync/internal/domain/schedule"
@@ -51,4 +52,14 @@ type ScheduleService interface {
 	Update(ctx context.Context, groupName string) error
 	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
 	StartWorker(interval time.Duration, groupID int, groupName string)
+}
+
+type ChatService interface {
+	CreateChat(ctx context.Context, c domainChat.Chat) (int, error)
+	GetChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
+	JoinChat(ctx context.Context, chatID, userID int) error
+	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
+	DeleteChat(ctx context.Context, chatID int, ownerID int) error
+	RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error
+	LeaveChat(ctx context.Context, chatID int, userID int) error
 }

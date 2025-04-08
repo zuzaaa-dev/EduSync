@@ -1,6 +1,7 @@
 package repository
 
 import (
+	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
 	domainSchedule "EduSync/internal/domain/schedule"
@@ -73,4 +74,18 @@ type SubjectRepository interface {
 type ScheduleRepository interface {
 	Save(ctx context.Context, entries []*domainSchedule.Schedule) error
 	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
+}
+
+// ChatRepository описывает операции для работы с чатами.
+type ChatRepository interface {
+	CreateChat(ctx context.Context, chat *domainChat.Chat) (int, error)
+	GetChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error)
+	DeleteChat(ctx context.Context, chatID int) error
+	UpdateChatInvite(ctx context.Context, chatID int, newJoinCode, newInviteLink string) error
+	// GetParticipants Метод для получения списка участников чата.
+	GetParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
+
+	RemoveParticipant(ctx context.Context, chatID int, userID int) error
+	JoinChat(ctx context.Context, chatID, userID int) error
+	LeaveChat(ctx context.Context, chatID int, userID int) error
 }

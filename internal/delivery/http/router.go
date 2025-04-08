@@ -1,6 +1,7 @@
 package http
 
 import (
+	chatHandler "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
 	scheduleHandler "EduSync/internal/delivery/http/schedule"
@@ -22,6 +23,7 @@ func SetupRouter(
 	instHandler *instituteHandler.InstitutionHandler,
 	subjectHandler *subjectHandler.InstitutionHandler,
 	scheduleHandler *scheduleHandler.ScheduleHandler,
+	chatHandler *chatHandler.ChatHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
 	router := gin.Default()
@@ -58,6 +60,18 @@ func SetupRouter(
 					"is_teacher": isTeacher,
 				})
 			})
+
+			chatGroup := protected.Group("/chats")
+			{
+				chatGroup.POST("", chatHandler.CreateChatHandler)                                       // Создание чата
+				chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)                                // Присоединиться к чату (для участников)
+				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)                  // Список участников
+				chatGroup.DELETE("/:chatID", chatHandler.DeleteChatHandler)                             // Удаление чата
+				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)                           // Пересоздание приглашения
+				chatGroup.DELETE("/:chatID/participants/:userID", chatHandler.RemoveParticipantHandler) // Удаление участника
+				chatGroup.DELETE("/:chatID/leave", chatHandler.LeaveChatHandler)                        // Покинуть чат
+			}
+
 		}
 		group := api.Group("/group")
 		{

@@ -73,7 +73,7 @@ func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) 
 	}
 	if existingUser != nil {
 		s.log.Errorf("пользователь с email: %v уже существует", user.Email)
-		return 0, errors.New("пользователь с таким email уже существует")
+		return 0, domainUser.ErrUserAlreadyExists
 	}
 
 	// Хешируем пароль.
@@ -116,7 +116,8 @@ func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) 
 	}
 	// Фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return 0, fmt.Errorf("ошибка коммита транзакции: %v", err)
+		s.log.Errorf("ошибка коммита транзакции: %v", err)
+		return 0, domainUser.ErrInvalidCredentials
 	}
 	return userID, err
 }
@@ -147,14 +148,14 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 	}
 
 	// Генерируем access token.
-	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, time.Hour)
+	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, time.Hour*24*30)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации токена: %v", err)
 		return "", "", err
 	}
 
 	// Генерируем refresh token.
-	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, 7*24*time.Hour)
+	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, 2*30*24*time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации рефреш токена: %v", err)
 		return "", "", err
