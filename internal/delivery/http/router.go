@@ -53,11 +53,15 @@ func SetupRouter(
 				email, _ := c.Get("email")
 				fullName, _ := c.Get("full_name")
 				isTeacher, _ := c.Get("is_teacher")
+				group_id, _ := c.Get("group_id")
+				institution_id, _ := c.Get("institution_id")
 				c.JSON(http.StatusOK, gin.H{
-					"user_id":    userID,
-					"email":      email,
-					"full_name":  fullName,
-					"is_teacher": isTeacher,
+					"user_id":        userID,
+					"email":          email,
+					"full_name":      fullName,
+					"is_teacher":     isTeacher,
+					"group_id":       group_id,
+					"institution_id": institution_id,
 				})
 			})
 

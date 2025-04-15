@@ -60,6 +60,8 @@ func JWTMiddleware(
 		c.Set("is_teacher", claims.IsTeacher)
 		c.Set("email", claims.Email)
 		c.Set("full_name", claims.FullName)
+		c.Set("group_id", claims.GroupId)
+		c.Set("institution_id", claims.InstitutionId)
 		c.Next()
 	}
 }

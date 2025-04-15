@@ -19,13 +19,21 @@ func NewJWTManager(secretKey []byte) *JWTManager {
 }
 
 // GenerateJWT генерирует JWT с заданным временем жизни.
-func (jm *JWTManager) GenerateJWT(id int, isTeacher bool, email, fullName string, expiresIn time.Duration) (string, error) {
+func (jm *JWTManager) GenerateJWT(
+	id int,
+	isTeacher bool,
+	email, fullName string,
+	institutionId, groupId int,
+	expiresIn time.Duration,
+) (string, error) {
 	expirationTime := time.Now().Add(expiresIn)
 	claims := &user.TokenClaims{
-		ID:        id,
-		IsTeacher: isTeacher,
-		Email:     email,
-		FullName:  fullName,
+		ID:            id,
+		IsTeacher:     isTeacher,
+		Email:         email,
+		FullName:      fullName,
+		InstitutionId: institutionId,
+		GroupId:       groupId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},

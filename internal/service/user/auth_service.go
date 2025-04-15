@@ -141,6 +141,27 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 		return "", "", errors.New("неверный email или пароль")
 	}
 
+	// Получаем информацию об учебном заведении и группе
+	var institutionId, groupId int
+
+	if user.IsTeacher {
+		teacher, err := s.teacherRepo.ByUserID(ctx, user.ID)
+		if err != nil {
+			s.log.Errorf("Ошибка получения информации о преподавателе: %v", err)
+			return "", "", err
+		}
+		institutionId = teacher.InstitutionID
+		groupId = 0 // У преподавателя нет группы
+	} else {
+		student, err := s.studentRepo.ByUserID(ctx, user.ID)
+		if err != nil {
+			s.log.Errorf("Ошибка получения информации о студенте: %v", err)
+			return "", "", err
+		}
+		institutionId = student.InstitutionID
+		groupId = student.GroupID
+	}
+
 	// Удаляем предыдущие токены для пользователя, чтобы не было дублирования.
 	if err := s.tokenRepo.DeleteForUser(ctx, user.ID); err != nil {
 		s.log.Errorf("Ошибка удаления токенов: %v", err)
@@ -148,14 +169,14 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 	}
 
 	// Генерируем access token.
-	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, time.Hour*24*30)
+	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации токена: %v", err)
 		return "", "", err
 	}
 
 	// Генерируем refresh token.
-	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, 2*30*24*time.Hour)
+	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, 24*time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации рефреш токена: %v", err)
 		return "", "", err
@@ -191,14 +212,14 @@ func (s *AuthService) RefreshToken(ctx context.Context, inputRefreshToken, userA
 	}
 
 	// Генерируем новый access-токен
-	accessToken, err := s.jwtManager.GenerateJWT(claims.ID, claims.IsTeacher, claims.Email, claims.FullName, time.Hour)
+	accessToken, err := s.jwtManager.GenerateJWT(claims.ID, claims.IsTeacher, claims.Email, claims.FullName, claims.InstitutionId, claims.GroupId, time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации токенов: %v", err)
 		return "", "", err
 	}
 
 	// Генерируем новый refresh-токен
-	newRefreshToken, err := s.jwtManager.GenerateJWT(claims.ID, claims.IsTeacher, claims.Email, claims.FullName, 7*24*time.Hour)
+	newRefreshToken, err := s.jwtManager.GenerateJWT(claims.ID, claims.IsTeacher, claims.Email, claims.FullName, claims.InstitutionId, claims.GroupId, 7*24*time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации рефреш токена: %v", err)
 		return "", "", err
