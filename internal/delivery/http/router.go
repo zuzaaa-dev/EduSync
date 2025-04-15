@@ -4,6 +4,7 @@ import (
 	chatHandler "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
+	messageHandler "EduSync/internal/delivery/http/message"
 	scheduleHandler "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
@@ -24,6 +25,7 @@ func SetupRouter(
 	subjectHandler *subjectHandler.InstitutionHandler,
 	scheduleHandler *scheduleHandler.ScheduleHandler,
 	chatHandler *chatHandler.ChatHandler,
+	messageHandler *messageHandler.MessageHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
 	router := gin.Default()
@@ -67,13 +69,22 @@ func SetupRouter(
 
 			chatGroup := protected.Group("/chats")
 			{
-				chatGroup.POST("", chatHandler.CreateChatHandler)                                       // Создание чата
-				chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)                                // Присоединиться к чату (для участников)
-				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)                  // Список участников
-				chatGroup.DELETE("/:chatID", chatHandler.DeleteChatHandler)                             // Удаление чата
-				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)                           // Пересоздание приглашения
-				chatGroup.DELETE("/:chatID/participants/:userID", chatHandler.RemoveParticipantHandler) // Удаление участника
-				chatGroup.DELETE("/:chatID/leave", chatHandler.LeaveChatHandler)                        // Покинуть чат
+				chatGroup.POST("", chatHandler.CreateChatHandler)                                   // Создание чата
+				chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)                            // Присоединиться к чату (для участников)
+				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)              // Список участников
+				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)                       // Пересоздание приглашения
+				chatGroup.DELETE("/:id", chatHandler.DeleteChatHandler)                             // Удаление чата
+				chatGroup.DELETE("/:id/participants/:userID", chatHandler.RemoveParticipantHandler) // Удаление участника
+				chatGroup.DELETE("/:id/leave", chatHandler.LeaveChatHandler)                        // Покинуть чат
+
+				messages := chatGroup.Group("/:id/messages")
+				{
+					messages.GET("", messageHandler.GetMessagesHandler)
+					messages.POST("", messageHandler.SendMessageHandler)
+					messages.DELETE("/:messageID", messageHandler.DeleteMessageHandler)
+					messages.POST("/:messageID/reply", messageHandler.ReplyMessageHandler)
+					messages.GET("/search", messageHandler.SearchMessagesHandler)
+				}
 			}
 
 		}

@@ -117,7 +117,7 @@ func (h *ChatHandler) DeleteChatHandler(c *gin.Context) {
 		return
 	}
 
-	chatIDStr := c.Param("chatID")
+	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})
@@ -157,7 +157,7 @@ func (h *ChatHandler) GetParticipantsHandler(c *gin.Context) {
 
 // RemoveParticipantHandler удаляет участника (только для владельца).
 func (h *ChatHandler) RemoveParticipantHandler(c *gin.Context) {
-	chatIDStr := c.Param("chatID")
+	chatIDStr := c.Param("id")
 	participantIDStr := c.Param("userID")
 	chatID, err := strconv.Atoi(chatIDStr)
 	if err != nil {
@@ -186,7 +186,7 @@ func (h *ChatHandler) RemoveParticipantHandler(c *gin.Context) {
 
 // LeaveChatHandler – участник покидает чат.
 func (h *ChatHandler) LeaveChatHandler(c *gin.Context) {
-	chatIDStr := c.Param("chatID")
+	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})

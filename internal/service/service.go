@@ -63,3 +63,12 @@ type ChatService interface {
 	RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error
 }
+
+type MessageService interface {
+	GetMessages(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Message, error)
+	SendMessage(ctx context.Context, msg domainChat.Message) (int, error)
+	DeleteMessage(ctx context.Context, messageID int, requesterID int) error
+	ReplyMessage(ctx context.Context, parentMessageID int, msg domainChat.Message) (int, error)
+	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
+	GetMessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+}

@@ -19,3 +19,20 @@ type Participant struct {
 	FullName  string `json:"full_name"`
 	IsTeacher bool   `json:"is_teacher"`
 }
+
+// Message представляет сообщение в чате.
+type Message struct {
+	ID              int       `json:"id"`
+	ChatID          int       `json:"chat_id"`
+	UserID          int       `json:"user_id"`
+	Text            *string   `json:"text"`              // может быть nil, если только файлы
+	MessageGroupID  *int      `json:"message_group_id"`  // для группировки сообщений (если применимо)
+	ParentMessageID *int      `json:"parent_message_id"` // для ответов
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+// FileInfo представляет информацию о файле, прикрепленном к сообщению.
+type FileInfo struct {
+	ID      int    `json:"id"`
+	FileURL string `json:"file_url"`
+}

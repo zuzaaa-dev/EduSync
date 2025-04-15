@@ -6,6 +6,7 @@ import (
 	chat3 "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
+	chat4 "EduSync/internal/delivery/http/message"
 	schedule2 "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
@@ -64,6 +65,7 @@ func main() {
 	institutionRepo := institutionRepository.NewRepository(db)
 	emailMaskRepo := institutionRepository.NewEmailMaskRepository(db)
 	chatRepo := chat.NewChatRepository(db)
+	messageRepo := chat.NewMessageRepository(db)
 
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
@@ -87,6 +89,7 @@ func main() {
 	)
 
 	chatSvc := chat2.NewChatService(chatRepo, logger)
+	messageSvc := chat2.NewMessageService(messageRepo, logger)
 
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
@@ -97,6 +100,7 @@ func main() {
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
 	chatHandler := chat3.NewChatHandler(chatSvc)
+	messageHandler := chat4.NewMessageHandler(messageSvc)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo,
 		authHandler,
@@ -106,6 +110,7 @@ func main() {
 		subjectHandle,
 		scheduleHandler,
 		chatHandler,
+		messageHandler,
 		logger,
 	)
 

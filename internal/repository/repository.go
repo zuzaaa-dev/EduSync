@@ -89,3 +89,11 @@ type ChatRepository interface {
 	JoinChat(ctx context.Context, chatID, userID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error
 }
+
+type MessageRepository interface {
+	CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error)
+	GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error)
+	DeleteMessage(ctx context.Context, messageID int) error
+	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
+	GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+}
