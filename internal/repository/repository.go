@@ -84,13 +84,15 @@ type ChatRepository interface {
 	UpdateChatInvite(ctx context.Context, chatID int, newJoinCode, newInviteLink string) error
 	// GetParticipants Метод для получения списка участников чата.
 	GetParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
-
 	RemoveParticipant(ctx context.Context, chatID int, userID int) error
 	JoinChat(ctx context.Context, chatID, userID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error
+	IsParticipant(ctx context.Context, chatID int, userID int) (bool, error)
+	IsOwner(ctx context.Context, chatID int, userID int) (bool, error)
 }
 
 type MessageRepository interface {
+	GetMessageByID(ctx context.Context, msgID int) (*domainChat.Message, error)
 	CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error)
 	GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error)
 	DeleteMessage(ctx context.Context, messageID int) error

@@ -102,7 +102,7 @@ func main() {
 	chatHandler := chat3.NewChatHandler(chatSvc)
 	messageHandler := chat4.NewMessageHandler(messageSvc)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
-	router := http.SetupRouter(tokenRepo,
+	router := http.SetupRouter(tokenRepo, chatRepo,
 		authHandler,
 		jwtManager,
 		groupHandle,

@@ -10,15 +10,15 @@ import (
 	domainChat "EduSync/internal/domain/chat"
 )
 
-type postgresMessageRepository struct {
+type messageRepository struct {
 	db *sql.DB
 }
 
 func NewMessageRepository(db *sql.DB) repository.MessageRepository {
-	return &postgresMessageRepository{db: db}
+	return &messageRepository{db: db}
 }
 
-func (r *postgresMessageRepository) CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error) {
+func (r *messageRepository) CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error) {
 	var id int
 	err := r.db.QueryRowContext(ctx, `
 		INSERT INTO messages (chat_id, user_id, text, message_group_id, parent_message_id, created_at)
@@ -30,7 +30,19 @@ func (r *postgresMessageRepository) CreateMessage(ctx context.Context, msg *doma
 	return id, nil
 }
 
-func (r *postgresMessageRepository) GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error) {
+func (r *messageRepository) GetMessageByID(ctx context.Context, msgID int) (*domainChat.Message, error) {
+	msg := &domainChat.Message{}
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, chat_id, user_id, text, message_group_id, parent_message_id, created_at
+		FROM messages
+		WHERE id = $1`, msgID).Scan(&msg.ID, &msg.ChatID, &msg.UserID, &msg.Text, &msg.MessageGroupID, &msg.ParentMessageID, &msg.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения сообщенияg по id: %w", err)
+	}
+	return msg, nil
+}
+
+func (r *messageRepository) GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, chat_id, user_id, text, message_group_id, parent_message_id, created_at 
 		FROM messages 
@@ -55,7 +67,7 @@ func (r *postgresMessageRepository) GetMessages(ctx context.Context, chatID int,
 	return messages, nil
 }
 
-func (r *postgresMessageRepository) DeleteMessage(ctx context.Context, messageID int) error {
+func (r *messageRepository) DeleteMessage(ctx context.Context, messageID int) error {
 	_, err := r.db.ExecContext(ctx, `
 		DELETE FROM messages WHERE id = $1
 	`, messageID)
@@ -65,7 +77,7 @@ func (r *postgresMessageRepository) DeleteMessage(ctx context.Context, messageID
 	return nil
 }
 
-func (r *postgresMessageRepository) SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error) {
+func (r *messageRepository) SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, chat_id, user_id, text, message_group_id, parent_message_id, created_at
 		FROM messages 
@@ -89,7 +101,7 @@ func (r *postgresMessageRepository) SearchMessages(ctx context.Context, chatID i
 	return messages, nil
 }
 
-func (r *postgresMessageRepository) GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
+func (r *messageRepository) GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, file_url FROM message_files WHERE message_id = $1
 	`, messageID)

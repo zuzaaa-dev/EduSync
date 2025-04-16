@@ -123,3 +123,51 @@ func (r *chatRepository) LeaveChat(ctx context.Context, chatID int, userID int) 
 	// То же, что и RemoveParticipant, так как участник уходит сам
 	return r.RemoveParticipant(ctx, chatID, userID)
 }
+
+// IsParticipant проверяет, является ли пользователь участником данного чата.
+// Предполагается, что участники студентов хранятся в таблице student_chats.
+func (r *chatRepository) IsParticipant(ctx context.Context, chatID int, userID int) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM student_chats WHERE chat_id = $1 AND student_id = $2
+		)
+	`, chatID, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("ошибка проверки участия в чате: %w", err)
+	}
+	if exists {
+		return true, nil
+	}
+
+	var ownerID int
+	err = r.db.QueryRowContext(ctx, `
+		SELECT owner_id FROM chats WHERE id = $1
+	`, chatID).Scan(&ownerID)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("ошибка получения владельца чата: %w", err)
+	}
+	if ownerID == userID {
+		return true, nil
+	}
+	return false, nil
+}
+
+// IsOwner проверяет, является ли пользователь владельцем данного чата.
+func (r *chatRepository) IsOwner(ctx context.Context, chatID int, userID int) (bool, error) {
+	var ownerID int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT owner_id FROM chats WHERE id = $1
+	`, chatID).Scan(&ownerID)
+	if err == sql.ErrNoRows {
+		return false, nil
+	} else if err != nil {
+		return false, fmt.Errorf("ошибка получения владельца чата: %w", err)
+	}
+	if ownerID == userID {
+		return true, nil
+	}
+	return false, nil
+}

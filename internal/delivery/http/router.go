@@ -9,7 +9,7 @@ import (
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/delivery/middleware"
-	userRepository "EduSync/internal/repository"
+	"EduSync/internal/repository"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -17,7 +17,8 @@ import (
 )
 
 func SetupRouter(
-	tokenRepo userRepository.TokenRepository,
+	tokenRepo repository.TokenRepository,
+	chatRepo repository.ChatRepository,
 	authHandler *user.AuthHandler,
 	jwtManager *util.JWTManager,
 	groupHandler *groupHandler.GroupHandler,
@@ -66,11 +67,11 @@ func SetupRouter(
 					"institution_id": institution_id,
 				})
 			})
-
 			chatGroup := protected.Group("/chats")
+			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler) // Присоединиться к чату (для участников)
+			chatGroup.Use(middleware.ChatMembershipMiddleware(chatRepo))
 			{
 				chatGroup.POST("", chatHandler.CreateChatHandler)                                   // Создание чата
-				chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)                            // Присоединиться к чату (для участников)
 				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)              // Список участников
 				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)                       // Пересоздание приглашения
 				chatGroup.DELETE("/:id", chatHandler.DeleteChatHandler)                             // Удаление чата

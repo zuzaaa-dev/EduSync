@@ -104,8 +104,8 @@ func (h *MessageHandler) DeleteMessageHandler(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Нет информации о пользователе"})
 		return
 	}
-	// TODO Добавить проверку на автора сообщения или владельца чата
-	err = h.messageService.DeleteMessage(c.Request.Context(), messageID, userID.(int))
+	c.Copy()
+	err = h.messageService.DeleteMessage(c.Copy(), messageID, userID.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось удалить сообщение"})
 		return
