@@ -2,7 +2,9 @@ package chat
 
 import (
 	domainChat "EduSync/internal/domain/chat"
+	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	serviceChat "EduSync/internal/service"
@@ -46,46 +48,74 @@ func (h *MessageHandler) GetMessagesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, messages)
 }
 
-// SendMessageHandler создает новое сообщение.
-// Пример запроса: POST /chats/:id/messages
+// SendMessageHandler создаёт новое сообщение вместе с файлами.
+// Запрос должен быть multipart/form-data с полем text, необязательными полями
+// message_group_id, parent_message_id и любым количеством файлов в ключе files.
 func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
-	chatIDStr := c.Param("id")
-	chatID, err := strconv.Atoi(chatIDStr)
+	// 1) Парсим chat_id
+	chatID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})
 		return
 	}
 
-	var req struct {
-		Text            *string `json:"text"`
-		MessageGroupID  *int    `json:"message_group_id"`
-		ParentMessageID *int    `json:"parent_message_id"`
-		// Файлы на данный момент обрабатываются отдельно
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
-		return
-	}
-
-	userID, exists := c.Get("user_id")
+	// 2) Получаем user_id из контекста (JWT‑middleware)
+	userIDIface, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Нет информации о пользователе"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Не авторизован"})
 		return
 	}
+	userID := userIDIface.(int)
 
-	message := domainChat.Message{
-		ChatID:          chatID,
-		UserID:          userID.(int),
-		Text:            req.Text,
-		MessageGroupID:  req.MessageGroupID,
-		ParentMessageID: req.ParentMessageID,
+	// 3) Multipart‑form
+	text := c.PostForm("text")
+
+	var mgid, pmid *int
+	if s := c.PostForm("message_group_id"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			mgid = &v
+		}
 	}
-	messageID, err := h.messageService.SendMessage(c.Request.Context(), message)
+	if s := c.PostForm("parent_message_id"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil {
+			pmid = &v
+		}
+	}
+
+	// 4) Сбор файлов
+	form, err := c.MultipartForm()
+	if err != nil && err != http.ErrNotMultipart {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ожидается multipart/form-data"})
+		return
+	}
+	var files []*multipart.FileHeader
+	if form != nil {
+		files = form.File["files"]
+	}
+
+	// 5) Собираем доменный объект
+	msg := domainChat.Message{
+		ChatID: chatID,
+		UserID: userID,
+		Text: func() *string {
+			if text != "" {
+				return &text
+			}
+			return nil
+		}(),
+		MessageGroupID:  mgid,
+		ParentMessageID: pmid,
+	}
+
+	// 6) Вызываем сервис с транзакцией и атомарным сохранением
+	messageID, err := h.messageService.SendMessageWithFiles(c.Request.Context(), msg, files, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать сообщение"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "Сообщение создано", "message_id": messageID})
+
+	// 7) Успех
+	c.JSON(http.StatusCreated, gin.H{"message_id": messageID})
 }
 
 // DeleteMessageHandler удаляет сообщение.
@@ -116,47 +146,12 @@ func (h *MessageHandler) DeleteMessageHandler(c *gin.Context) {
 // ReplyMessageHandler создает ответ на сообщение.
 // Пример запроса: POST /chats/:id/messages/:messageID/reply
 func (h *MessageHandler) ReplyMessageHandler(c *gin.Context) {
-	chatIDStr := c.Param("id")
-	chatID, err := strconv.Atoi(chatIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})
-		return
+	//// переиспользуем SendMessageHandler, просто вкладываем parent_message_id
+	c.Request.PostForm = url.Values{
+		"parent_message_id": {c.Param("messageID")},
+		// остальные поля (text, files)… уже в POST body
 	}
-	parentMessageIDStr := c.Param("messageID")
-	parentMessageID, err := strconv.Atoi(parentMessageIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор родительского сообщения"})
-		return
-	}
-
-	var req struct {
-		Text *string `json:"text"`
-		// Допустимо добавлять поле для файлов, если необходимо.
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
-		return
-	}
-
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Нет информации о пользователе"})
-		return
-	}
-
-	message := domainChat.Message{
-		ChatID:          chatID, // Можно получить из контекста или параметров URL, если требуется.
-		UserID:          userID.(int),
-		Text:            req.Text,
-		ParentMessageID: &parentMessageID,
-	}
-
-	messageID, err := h.messageService.ReplyMessage(c.Request.Context(), parentMessageID, message)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать ответ"})
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{"message": "Ответ создан", "message_id": messageID})
+	h.SendMessageHandler(c)
 }
 
 // SearchMessagesHandler ищет сообщения по запросу.

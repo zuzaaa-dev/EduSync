@@ -8,6 +8,8 @@ import (
 	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
+	"github.com/gin-gonic/gin"
+	"mime/multipart"
 	"time"
 )
 
@@ -71,4 +73,5 @@ type MessageService interface {
 	ReplyMessage(ctx context.Context, parentMessageID int, msg domainChat.Message) (int, error)
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
 	GetMessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+	SendMessageWithFiles(ctx context.Context, msg domainChat.Message, files []*multipart.FileHeader, c *gin.Context) (int, error)
 }

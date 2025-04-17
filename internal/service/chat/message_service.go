@@ -4,12 +4,18 @@ import (
 	"EduSync/internal/repository"
 	"EduSync/internal/service"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"mime/multipart"
+	"os"
 	"strings"
 
 	domainChat "EduSync/internal/domain/chat"
 	"github.com/sirupsen/logrus"
 )
+
+var ErrInternal = errors.New("внутренняя ошибка сервера")
 
 type messageService struct {
 	repo repository.MessageRepository
@@ -36,6 +42,20 @@ func (s *messageService) GetMessages(ctx context.Context, chatID, limit, offset 
 		s.log.Errorf("Ошибка получения сообщений для чата %d: %v", chatID, err)
 		return nil, fmt.Errorf("не удалось получить сообщения")
 	}
+
+	// Для каждого сообщения добираем список файлов
+	for _, m := range msgs {
+		files, ferr := s.repo.GetMessageFileInfo(ctx, m.ID)
+		if ferr != nil {
+			s.log.Errorf("GetMessageFileInfo(%d): %v", m.ID, ferr)
+		} else {
+			m.Files = make([]domainChat.FileInfo, len(files))
+			for i, f := range files {
+				m.Files[i] = *f
+			}
+		}
+	}
+
 	return msgs, nil
 }
 
@@ -77,10 +97,43 @@ func (s *messageService) DeleteMessage(ctx context.Context, messageID int, reque
 	if requesterID != msg.UserID && !isTeacher.(bool) {
 		return fmt.Errorf("нет прав для удаления сообщения")
 	}
-	err = s.repo.DeleteMessage(ctx, messageID)
+	tx, err := s.repo.BeginTx(ctx)
+
 	if err != nil {
-		s.log.Errorf("Ошибка удаления сообщения %d: %v", messageID, err)
-		return fmt.Errorf("не удалось удалить сообщение")
+		s.log.Error("BeginTx:", err)
+		return ErrInternal
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1) список файлов (чтобы удалить физически)
+	files, ferr := s.repo.GetMessageFileInfo(ctx, messageID)
+	if ferr != nil {
+		s.log.Error("GetMessageFileInfo:", ferr)
+		return ErrInternal
+	}
+
+	// 2) удаляем записи в БД
+	if err = s.repo.DeleteMessageFilesTx(ctx, tx, messageID); err != nil {
+		s.log.Error("DeleteMessageFilesTx:", err)
+		return ErrInternal
+	}
+	if err = s.repo.DeleteMessageTx(ctx, tx, messageID); err != nil {
+		s.log.Error("DeleteMessageTx:", err)
+		return ErrInternal
+	}
+
+	// 3) очищаем физические файлы
+	for _, f := range files {
+		os.Remove(f.FileURL) // игнорируем ошибку
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Error("Commit:", err)
+		return ErrInternal
 	}
 	return nil
 }
@@ -102,6 +155,17 @@ func (s *messageService) SearchMessages(ctx context.Context, chatID int, query s
 		s.log.Errorf("Ошибка поиска сообщений в чате %d: %v", chatID, err)
 		return nil, fmt.Errorf("не удалось найти сообщения")
 	}
+	for _, m := range msgs {
+		files, ferr := s.repo.GetMessageFileInfo(ctx, m.ID)
+		if ferr != nil {
+			s.log.Errorf("GetMessageFileInfo(%d): %v", m.ID, ferr)
+		} else {
+			m.Files = make([]domainChat.FileInfo, len(files))
+			for i, f := range files {
+				m.Files[i] = *f
+			}
+		}
+	}
 	return msgs, nil
 }
 
@@ -112,4 +176,54 @@ func (s *messageService) GetMessageFiles(ctx context.Context, messageID int) ([]
 		return nil, fmt.Errorf("не удалось получить информацию о файлах")
 	}
 	return files, nil
+}
+
+func (s *messageService) SendMessageWithFiles(
+	ctx context.Context,
+	msg domainChat.Message,
+	files []*multipart.FileHeader,
+	c *gin.Context,
+) (int, error) {
+	// Валидация: хотя бы текст или хотя бы один файл
+	if msg.Text == nil && len(files) == 0 {
+		return 0, errors.New("сообщение должно содержать текст или файл")
+	}
+	// Начинаем транзакцию через репозиторий
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		s.log.Error("tx begin:", err)
+		return 0, errors.New("unexpected error")
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 1) Создаём сообщение
+	msgID, err := s.repo.CreateMessageTx(ctx, tx, &msg)
+	if err != nil {
+		s.log.Error("create msg:", err)
+		return 0, errors.New("failed to save message")
+	}
+
+	// 2) Сохраняем файлы (если есть)
+	for _, fh := range files {
+		// a) сохраняем физически и получаем URL
+		dst := fmt.Sprintf("uploads/%d_%s", msgID, fh.Filename)
+		if err := c.SaveUploadedFile(fh, dst); err != nil {
+			return 0, errors.New("failed to save file")
+		}
+		// b) сохраняем в БД
+		if err := s.repo.CreateMessageFileTx(ctx, tx, msgID, dst); err != nil {
+			s.log.Error("save file record:", err)
+			return 0, errors.New("failed to save file record")
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Error("tx commit:", err)
+		return 0, errors.New("unexpected error")
+	}
+	return msgID, nil
 }

@@ -98,4 +98,10 @@ type MessageRepository interface {
 	DeleteMessage(ctx context.Context, messageID int) error
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
 	GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+
+	BeginTx(ctx context.Context) (*sql.Tx, error)
+	CreateMessageTx(ctx context.Context, tx *sql.Tx, msg *domainChat.Message) (int, error)
+	CreateMessageFileTx(ctx context.Context, tx *sql.Tx, messageID int, fileURL string) error
+	DeleteMessageFilesTx(ctx context.Context, tx *sql.Tx, messageID int) error
+	DeleteMessageTx(ctx context.Context, tx *sql.Tx, messageID int) error
 }
