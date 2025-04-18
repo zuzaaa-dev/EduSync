@@ -53,7 +53,8 @@ type SubjectService interface {
 type ScheduleService interface {
 	Update(ctx context.Context, groupName string) error
 	ByGroupID(ctx context.Context, groupID int) ([]*deliverSchedule.Item, error)
-	StartWorker(interval time.Duration, groupID int, groupName string)
+	StartWorker(interval time.Duration)
+	StartWorkerInitials(interval time.Duration)
 }
 
 type ChatService interface {

@@ -12,6 +12,7 @@ import (
 	"EduSync/internal/delivery/http/user"
 	groupParser "EduSync/internal/integration/parser/rksi/group"
 	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
+	teacherParser "EduSync/internal/integration/parser/rksi/teacher"
 	"EduSync/internal/repository/chat"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
@@ -70,6 +71,7 @@ func main() {
 	messageRepo := chat.NewMessageRepository(db)
 
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
+	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
 	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
 	authService := userService.NewAuthService(userRepo,
@@ -84,6 +86,7 @@ func main() {
 	scheduleService := scheduleServ.NewScheduleService(
 		scheduleRepo,
 		scheduleParse,
+		teacherParse,
 		subjectService,
 		authService,
 		groupRepo,
@@ -99,6 +102,7 @@ func main() {
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
 	go groupService.StartWorker(100 * time.Minute)
+	go scheduleService.StartWorkerInitials(100 * time.Minute)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)

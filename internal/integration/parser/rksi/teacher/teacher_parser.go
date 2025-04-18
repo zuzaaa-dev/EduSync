@@ -1,4 +1,4 @@
-package group
+package teacher
 
 import (
 	"EduSync/internal/integration/parser/rksi"
@@ -19,7 +19,7 @@ type TeacherParser struct {
 	log *logrus.Logger
 }
 
-func NewGroupParser(URL string, log *logrus.Logger) Parser {
+func NewTeacherParser(URL string, log *logrus.Logger) *TeacherParser {
 	return &TeacherParser{URL: URL, log: log}
 }
 

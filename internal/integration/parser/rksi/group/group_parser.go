@@ -19,7 +19,7 @@ type GroupParser struct {
 	log *logrus.Logger
 }
 
-func NewGroupParser(URL string, log *logrus.Logger) Parser {
+func NewGroupParser(URL string, log *logrus.Logger) *GroupParser {
 	return &GroupParser{URL: URL, log: log}
 }
 

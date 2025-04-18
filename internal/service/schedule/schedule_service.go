@@ -3,19 +3,22 @@ package schedule
 import (
 	domainSchedule "EduSync/internal/domain/schedule"
 	"EduSync/internal/integration/parser/rksi/schedule"
+	"EduSync/internal/integration/parser/rksi/teacher"
 	"EduSync/internal/repository"
 	"EduSync/internal/service"
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 )
 
 type scheduleService struct {
 	repo                repository.ScheduleRepository
-	parser              *schedule.ScheduleParser // Интерфейс адаптера парсинга расписания
-	subjectSvc          service.SubjectService   // Сервис для работы с предметами
-	userSvc             service.UserService      // Сервис для работы с пользователями (для поиска преподавателя)
+	parserSchedule      *schedule.ScheduleParser
+	parserTeacher       *teacher.TeacherParser
+	subjectSvc          service.SubjectService
+	userSvc             service.UserService
 	groupRepo           repository.GroupRepository
 	teacherInitialsRepo repository.TeacherInitialsRepository
 	log                 *logrus.Logger
@@ -24,7 +27,8 @@ type scheduleService struct {
 // NewScheduleService создает новый сервис для расписания.
 func NewScheduleService(
 	repo repository.ScheduleRepository,
-	parser *schedule.ScheduleParser,
+	parserSchedule *schedule.ScheduleParser,
+	parserTeacher *teacher.TeacherParser,
 	subjectSvc service.SubjectService,
 	userSvc service.UserService,
 	groupRepo repository.GroupRepository,
@@ -33,7 +37,8 @@ func NewScheduleService(
 ) service.ScheduleService {
 	return &scheduleService{
 		repo:                repo,
-		parser:              parser,
+		parserSchedule:      parserSchedule,
+		parserTeacher:       parserTeacher,
 		subjectSvc:          subjectSvc,
 		userSvc:             userSvc,
 		groupRepo:           groupRepo,
@@ -47,7 +52,7 @@ func (s *scheduleService) Update(ctx context.Context, groupName string) error {
 	s.log.Infof("Обновление расписания для группы: %s (id: %d)", groupName)
 
 	// Получаем расписание с помощью парсера
-	parsedEntries, err := s.parser.FetchSchedule(ctx, groupName)
+	parsedEntries, err := s.parserSchedule.FetchSchedule(ctx, groupName)
 	if err != nil {
 		s.log.Errorf("ошибка парсинга расписания: %v", err)
 		return fmt.Errorf("ошибка парсинга расписания")
@@ -79,13 +84,13 @@ func (s *scheduleService) Update(ctx context.Context, groupName string) error {
 		}
 
 		// Проверяем предмет: если не существует, добавляем его через subjectSvc
-		subj, err := s.subjectSvc.ByNameAndInstitution(ctx, pe.Discipline, s.parser.InstitutionID)
+		subj, err := s.subjectSvc.ByNameAndInstitution(ctx, pe.Discipline, s.parserSchedule.InstitutionID)
 		if err != nil {
 			s.log.Errorf("ошибка поиска предмета: %v", err)
 			continue
 		}
 		if subj == nil {
-			subjID, err := s.subjectSvc.Create(ctx, pe.Discipline, s.parser.InstitutionID)
+			subjID, err := s.subjectSvc.Create(ctx, pe.Discipline, s.parserSchedule.InstitutionID)
 			if err != nil {
 				s.log.Errorf("ошибка создания предмета: %v", err)
 				continue
@@ -181,15 +186,58 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 	return out, nil
 }
 
-// StartWorker запускает периодическое обновление расписания для заданной группы.
-func (s *scheduleService) StartWorker(interval time.Duration, groupID int, groupName string) {
+func (s *scheduleService) updateInitials(ctx context.Context) error {
+	initials, id, err := s.parserTeacher.FetchTeacher(context.Background())
+	if err != nil {
+		s.log.Errorf("Ошибка парсинга инициалов преподавателей: %v", err)
+		return err
+	}
+	for _, initial := range initials {
+		if strings.HasPrefix(initial, "_") {
+			continue
+		}
+		_, err := s.teacherInitialsRepo.Upsert(ctx, initial, nil, id)
+		if err != nil {
+			s.log.Errorf("Ошибка сохраннеия инициала %v: %v", initial, err)
+			continue
+		}
+	}
+	return nil
+}
+
+// StartWorker запускает периодическое обновление расписания и инициалов.
+func (s *scheduleService) StartWorker(interval time.Duration) {
+	go func() {
+		ctx := context.Background()
+		for {
+
+			groups, err := s.groupRepo.ByInstitutionID(ctx, s.parserSchedule.InstitutionID)
+			if err != nil {
+				s.log.Errorf("Ошибка получения групп: %v", err)
+			}
+			for _, group := range groups {
+				err = s.Update(ctx, group.Name)
+				if err != nil {
+					s.log.Errorf("Ошибка обновления расписания: %v", err)
+				} else {
+					s.log.Info("Расписание успешно обновлено")
+				}
+				time.Sleep(time.Second * 10)
+			}
+			time.Sleep(interval)
+		}
+	}()
+}
+
+// StartWorkerInitials запускает периодическое обновление расписания и инициалов.
+func (s *scheduleService) StartWorkerInitials(interval time.Duration) {
 	go func() {
 		for {
-			err := s.Update(context.Background(), groupName)
+			err := s.updateInitials(context.Background())
 			if err != nil {
-				s.log.Errorf("Ошибка обновления расписания: %v", err)
+				s.log.Errorf("Ошибка парсинга инициалов: %v", err)
 			} else {
-				s.log.Info("Расписание успешно обновлено")
+				s.log.Info("Инициалы успешно обновлены")
 			}
 			time.Sleep(interval)
 		}
