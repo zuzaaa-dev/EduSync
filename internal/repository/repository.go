@@ -34,6 +34,13 @@ type TeacherRepository interface {
 	BySurname(ctx context.Context, surname string) ([]*domainUser.User, error)
 }
 
+// TeacherInitialsRepository описывает работу с таблицей teacher_initials.
+type TeacherInitialsRepository interface {
+	Upsert(ctx context.Context, initials string, teacherID *int, institutionID int) (int, error)
+	GetByInitials(ctx context.Context, initials string, institutionID int) (*domainSchedule.TeacherInitials, error)
+	GetByID(ctx context.Context, id int) (*domainSchedule.TeacherInitials, error)
+}
+
 type TokenRepository interface {
 	DeleteForUser(ctx context.Context, userID int) error
 	Save(ctx context.Context, userID int, accessToken, refreshToken, userAgent, ipAddress string, expiresAt time.Time) error

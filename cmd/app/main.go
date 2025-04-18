@@ -26,6 +26,7 @@ import (
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
+	"time"
 )
 
 func main() {
@@ -62,6 +63,7 @@ func main() {
 	groupRepo := groupRepository.NewGroupRepository(db)
 	subjectRepo := subjectRepository.NewSubjectRepository(db)
 	scheduleRepo := scheduleRepository.NewScheduleRepository(db)
+	teacherInitionalsRepo := scheduleRepository.NewTeacherInitialsRepository(db)
 	institutionRepo := institutionRepository.NewRepository(db)
 	emailMaskRepo := institutionRepository.NewEmailMaskRepository(db)
 	chatRepo := chat.NewChatRepository(db)
@@ -85,6 +87,7 @@ func main() {
 		subjectService,
 		authService,
 		groupRepo,
+		teacherInitionalsRepo,
 		logger,
 	)
 
@@ -95,7 +98,7 @@ func main() {
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
-	//go groupService.StartWorker(100 * time.Second)
+	go groupService.StartWorker(100 * time.Minute)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)

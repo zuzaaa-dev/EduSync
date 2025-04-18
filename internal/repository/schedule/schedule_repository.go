@@ -25,10 +25,9 @@ func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domain
 	if err != nil {
 		return fmt.Errorf("не удалось начать транзакцию: %v", err)
 	}
-
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO schedule (group_id, subject_id, date, pair_number, classroom, teacher_id, teacher_initials, start_time, end_time)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT DO NOTHING
+		INSERT INTO schedule (group_id, subject_id, date, pair_number, classroom, teacher_initials_id, start_time, end_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING
 	`)
 	if err != nil {
 		tx.Rollback()
@@ -36,15 +35,20 @@ func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domain
 	}
 	defer stmt.Close()
 
+	var teacherInitID *int
 	for _, entry := range entries {
+		if *entry.TeacherInitialsID != 0 {
+			teacherInitID = entry.TeacherInitialsID
+		} else {
+			teacherInitID = nil
+		}
 		_, err := stmt.ExecContext(ctx,
 			entry.GroupID,
 			entry.SubjectID,
 			entry.Date,
 			entry.PairNumber,
 			entry.Classroom,
-			entry.TeacherID,
-			entry.TeacherInitials,
+			teacherInitID,
 			entry.StartTime,
 			entry.EndTime,
 		)
@@ -60,7 +64,7 @@ func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domain
 // ByGroupID возвращает расписание для заданной группы.
 func (r *PostgresScheduleRepository) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, group_id, subject_id, date, pair_number, classroom, teacher_id, teacher_initials, start_time, end_time
+		SELECT id, group_id, subject_id, date, pair_number, classroom, teacher_initials_id, start_time, end_time
 		FROM schedule
 		WHERE group_id = $1
 		ORDER BY date, pair_number
@@ -73,24 +77,15 @@ func (r *PostgresScheduleRepository) ByGroupID(ctx context.Context, groupID int)
 	var entries []*domainSchedule.Schedule
 	for rows.Next() {
 		entry := &domainSchedule.Schedule{}
-		var teacherID sql.NullInt64
-		var teacherInitials sql.NullString
+		var teacherInitialsID *int
 
 		err := rows.Scan(&entry.ID, &entry.GroupID, &entry.SubjectID, &entry.Date, &entry.PairNumber, &entry.Classroom,
-			&teacherID, &teacherInitials, &entry.StartTime, &entry.EndTime)
+			&teacherInitialsID, &entry.StartTime, &entry.EndTime)
 		if err != nil {
 			return nil, fmt.Errorf("ошибка сканирования записи расписания: %v", err)
 		}
-		if teacherID.Valid {
-			id := int(teacherID.Int64)
-			entry.TeacherID = &id
-		} else {
-			entry.TeacherID = nil
-		}
-		if teacherInitials.Valid {
-			entry.TeacherInitials = teacherInitials.String
-		} else {
-			entry.TeacherInitials = ""
+		if teacherInitialsID != nil {
+			entry.TeacherInitialsID = teacherInitialsID
 		}
 		entries = append(entries, entry)
 	}

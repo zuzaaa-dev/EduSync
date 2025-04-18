@@ -1,10 +1,10 @@
 package schedule
 
 import (
+	"EduSync/internal/service"
 	"net/http"
 	"strconv"
 
-	service "EduSync/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

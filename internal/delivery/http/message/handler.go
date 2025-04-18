@@ -52,14 +52,12 @@ func (h *MessageHandler) GetMessagesHandler(c *gin.Context) {
 // Запрос должен быть multipart/form-data с полем text, необязательными полями
 // message_group_id, parent_message_id и любым количеством файлов в ключе files.
 func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
-	// 1) Парсим chat_id
 	chatID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})
 		return
 	}
 
-	// 2) Получаем user_id из контекста (JWT‑middleware)
 	userIDIface, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Не авторизован"})
@@ -67,7 +65,6 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 	}
 	userID := userIDIface.(int)
 
-	// 3) Multipart‑form
 	text := c.PostForm("text")
 
 	var mgid, pmid *int
@@ -82,7 +79,6 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 		}
 	}
 
-	// 4) Сбор файлов
 	form, err := c.MultipartForm()
 	if err != nil && err != http.ErrNotMultipart {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Ожидается multipart/form-data"})
@@ -93,7 +89,6 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 		files = form.File["files"]
 	}
 
-	// 5) Собираем доменный объект
 	msg := domainChat.Message{
 		ChatID: chatID,
 		UserID: userID,
@@ -107,14 +102,12 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 		ParentMessageID: pmid,
 	}
 
-	// 6) Вызываем сервис с транзакцией и атомарным сохранением
 	messageID, err := h.messageService.SendMessageWithFiles(c.Request.Context(), msg, files, c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать сообщение"})
 		return
 	}
 
-	// 7) Успех
 	c.JSON(http.StatusCreated, gin.H{"message_id": messageID})
 }
 
@@ -146,10 +139,8 @@ func (h *MessageHandler) DeleteMessageHandler(c *gin.Context) {
 // ReplyMessageHandler создает ответ на сообщение.
 // Пример запроса: POST /chats/:id/messages/:messageID/reply
 func (h *MessageHandler) ReplyMessageHandler(c *gin.Context) {
-	//// переиспользуем SendMessageHandler, просто вкладываем parent_message_id
 	c.Request.PostForm = url.Values{
 		"parent_message_id": {c.Param("messageID")},
-		// остальные поля (text, files)… уже в POST body
 	}
 	h.SendMessageHandler(c)
 }

@@ -4,7 +4,7 @@ import (
 	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
-	domainSchedule "EduSync/internal/domain/schedule"
+	deliverSchedule "EduSync/internal/domain/schedule"
 	domainSubject "EduSync/internal/domain/subject"
 	domainUser "EduSync/internal/domain/user"
 	"context"
@@ -52,7 +52,7 @@ type SubjectService interface {
 // ScheduleService описывает методы работы с расписанием.
 type ScheduleService interface {
 	Update(ctx context.Context, groupName string) error
-	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
+	ByGroupID(ctx context.Context, groupID int) ([]*deliverSchedule.Item, error)
 	StartWorker(interval time.Duration, groupID int, groupName string)
 }
 

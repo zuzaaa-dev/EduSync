@@ -63,25 +63,38 @@ CREATE TABLE subjects
 );
 
 -- ================================================
+-- Новая таблица инициалов преподавателей
+-- ================================================
+CREATE TABLE teacher_initials
+(
+    id             SERIAL PRIMARY KEY,
+    initials       VARCHAR(50) NOT NULL,
+    teacher_id     INT,
+    institution_id INT         NOT NULL,
+    FOREIGN KEY (teacher_id) REFERENCES teachers (user_id) ON DELETE SET NULL,
+    FOREIGN KEY (institution_id) REFERENCES institutions (id) ON DELETE CASCADE,
+    UNIQUE (initials, institution_id)
+);
+
+-- ================================================
 -- Таблица расписания
 -- ================================================
 CREATE TABLE schedule
 (
-    id               SERIAL PRIMARY KEY,
-    group_id         INT         NOT NULL,
-    subject_id       INT         NOT NULL,
-    date             DATE        NOT NULL,
-    pair_number      INT         NOT NULL,
-    classroom        VARCHAR(50) NOT NULL,
-    teacher_id       INT,
-    teacher_initials VARCHAR(50),
-    start_time       TIME        NOT NULL,
-    end_time         TIME        NOT NULL,
+    id                  SERIAL PRIMARY KEY,
+    group_id            INT         NOT NULL,
+    subject_id          INT         NOT NULL,
+    date                DATE        NOT NULL,
+    pair_number         INT         NOT NULL,
+    classroom           VARCHAR(50) NOT NULL,
+    teacher_initials_id INT,
+    start_time          TIME        NOT NULL,
+    end_time            TIME        NOT NULL,
     FOREIGN KEY (group_id) REFERENCES groups (id),
     FOREIGN KEY (subject_id) REFERENCES subjects (id),
-    FOREIGN KEY (teacher_id) REFERENCES teachers (user_id),
-    CHECK (teacher_id IS NOT NULL OR teacher_initials IS NOT NULL)
+    FOREIGN KEY (teacher_initials_id) REFERENCES teacher_initials (id)
 );
+
 
 -- ================================================
 -- Таблица чатов

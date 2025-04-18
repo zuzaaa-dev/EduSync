@@ -1,24 +1,24 @@
 package schedule
 
 import (
-	"EduSync/internal/repository"
-	"context"
-	"fmt"
-	"time"
-
 	domainSchedule "EduSync/internal/domain/schedule"
 	"EduSync/internal/integration/parser/rksi/schedule"
+	"EduSync/internal/repository"
 	"EduSync/internal/service"
+	"context"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type scheduleService struct {
-	repo       repository.ScheduleRepository
-	parser     *schedule.ScheduleParser // Интерфейс адаптера парсинга расписания
-	subjectSvc service.SubjectService   // Сервис для работы с предметами
-	userSvc    service.UserService      // Сервис для работы с пользователями (для поиска преподавателя)
-	groupRepo  repository.GroupRepository
-	log        *logrus.Logger
+	repo                repository.ScheduleRepository
+	parser              *schedule.ScheduleParser // Интерфейс адаптера парсинга расписания
+	subjectSvc          service.SubjectService   // Сервис для работы с предметами
+	userSvc             service.UserService      // Сервис для работы с пользователями (для поиска преподавателя)
+	groupRepo           repository.GroupRepository
+	teacherInitialsRepo repository.TeacherInitialsRepository
+	log                 *logrus.Logger
 }
 
 // NewScheduleService создает новый сервис для расписания.
@@ -28,15 +28,17 @@ func NewScheduleService(
 	subjectSvc service.SubjectService,
 	userSvc service.UserService,
 	groupRepo repository.GroupRepository,
+	teacherInitialsRepo repository.TeacherInitialsRepository,
 	log *logrus.Logger,
 ) service.ScheduleService {
 	return &scheduleService{
-		repo:       repo,
-		parser:     parser,
-		subjectSvc: subjectSvc,
-		userSvc:    userSvc,
-		groupRepo:  groupRepo,
-		log:        log,
+		repo:                repo,
+		parser:              parser,
+		subjectSvc:          subjectSvc,
+		userSvc:             userSvc,
+		groupRepo:           groupRepo,
+		teacherInitialsRepo: teacherInitialsRepo,
+		log:                 log,
 	}
 }
 
@@ -97,30 +99,28 @@ func (s *scheduleService) Update(ctx context.Context, groupName string) error {
 		}
 
 		// Проверяем преподавателя: если в расписании указано ФИО, ищем преподавателя по ФИО.
-		// Здесь можно добавить собственную логику поиска (например, через userSvc)
-		var teacherID *int
+		var teacherID int
 		teacherInitials := pe.Teacher
 		// Попытаемся найти преподавателя, если имя не пустое и не равно "-"
 		if pe.Teacher != "" && pe.Teacher != "-" {
 			t, err := s.userSvc.FindTeacherByName(ctx, pe.Teacher)
 			if err != nil {
+				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, nil, group.InstitutionID)
 				s.log.Errorf("ошибка поиска преподавателя: %v", err)
 			} else if t != nil {
-				teacherID = &t.ID
-				teacherInitials = "" // Если преподаватель найден, можно не сохранять инициалы
+				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, &t.ID, group.InstitutionID)
 			}
 		}
 
 		entry := &domainSchedule.Schedule{
-			GroupID:         groupID,
-			SubjectID:       subj.ID,
-			Date:            pe.Date,
-			PairNumber:      pairNumber, // Здесь можно добавить парсинг номера пары, если он есть
-			Classroom:       pe.Classroom,
-			TeacherID:       teacherID,
-			TeacherInitials: teacherInitials,
-			StartTime:       combineTime(pe.Date, startTime),
-			EndTime:         combineTime(pe.Date, endTime),
+			GroupID:           groupID,
+			SubjectID:         subj.ID,
+			Date:              pe.Date,
+			PairNumber:        pairNumber,
+			Classroom:         pe.Classroom,
+			TeacherInitialsID: &teacherID,
+			StartTime:         combineTime(pe.Date, startTime),
+			EndTime:           combineTime(pe.Date, endTime),
 		}
 
 		entries = append(entries, entry)
@@ -142,8 +142,43 @@ func combineTime(date, t time.Time) time.Time {
 }
 
 // ByGroupID возвращает расписание для заданной группы.
-func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
-	return s.repo.ByGroupID(ctx, groupID)
+func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Item, error) {
+	entries, err := s.repo.ByGroupID(ctx, groupID)
+	if err != nil {
+		s.log.Errorf("Ошибка получения расписания: %v", err)
+		return nil, err
+	}
+	var out []*domainSchedule.Item
+	for _, e := range entries {
+		var (
+			tid      *int
+			initials string
+		)
+		if e.TeacherInitialsID != nil {
+			ti, err := s.teacherInitialsRepo.GetByID(ctx, *e.TeacherInitialsID)
+			if err != nil {
+				return nil, fmt.Errorf("initialsRepo.GetByID: %w", err)
+			}
+			if ti != nil {
+				tid = ti.TeacherID
+				initials = ti.Initials
+			}
+		}
+
+		out = append(out, &domainSchedule.Item{
+			ID:              e.ID,
+			GroupID:         e.GroupID,
+			SubjectID:       e.SubjectID,
+			Date:            e.Date,
+			PairNumber:      e.PairNumber,
+			Classroom:       e.Classroom,
+			TeacherID:       tid,
+			TeacherInitials: initials,
+			StartTime:       e.StartTime,
+			EndTime:         e.EndTime,
+		})
+	}
+	return out, nil
 }
 
 // StartWorker запускает периодическое обновление расписания для заданной группы.
