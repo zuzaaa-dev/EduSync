@@ -39,6 +39,7 @@ type TeacherInitialsRepository interface {
 	Upsert(ctx context.Context, initials string, teacherID *int, institutionID int) (int, error)
 	GetByInitials(ctx context.Context, initials string, institutionID int) (*domainSchedule.TeacherInitials, error)
 	GetByID(ctx context.Context, id int) (*domainSchedule.TeacherInitials, error)
+	GetAll(ctx context.Context, institutionID int) ([]*domainSchedule.TeacherInitials, error)
 }
 
 type TokenRepository interface {

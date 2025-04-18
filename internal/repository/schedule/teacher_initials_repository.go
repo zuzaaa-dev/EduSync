@@ -77,3 +77,25 @@ func (r *teacherInitialsRepo) GetByID(ctx context.Context, id int) (*domain.Teac
 	}
 	return ti, nil
 }
+
+func (r *teacherInitialsRepo) GetAll(ctx context.Context, institutionID int) ([]*domain.TeacherInitials, error) {
+	const q = `
+      SELECT id, initials, teacher_id, institution_id
+        FROM teacher_initials
+        WHERE institution_id = $1`
+	rows, err := r.db.QueryContext(ctx, q, institutionID)
+	if err != nil {
+		return nil, fmt.Errorf("teacher_initials.GetAll: %w", err)
+	}
+	defer rows.Close()
+
+	var list []*domain.TeacherInitials
+	for rows.Next() {
+		ti := &domain.TeacherInitials{}
+		if err := rows.Scan(&ti.ID, &ti.Initials, &ti.TeacherID, &ti.InstitutionID); err != nil {
+			return nil, fmt.Errorf("teacher_initials scan: %w", err)
+		}
+		list = append(list, ti)
+	}
+	return list, nil
+}

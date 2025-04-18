@@ -74,6 +74,7 @@ func main() {
 	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
 	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
+	teacherInitionalsService := scheduleServ.NewTeacherInitialsService(teacherInitionalsRepo, logger)
 	authService := userService.NewAuthService(userRepo,
 		studentRepo,
 		teacherRepo,
@@ -108,6 +109,7 @@ func main() {
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
 	chatHandler := chat3.NewChatHandler(chatSvc)
 	messageHandler := chat4.NewMessageHandler(messageSvc)
+	teacherInitionalsHandler := schedule2.NewTeacherInitialsHandler(teacherInitionalsService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, chatRepo,
 		authHandler,
@@ -118,6 +120,7 @@ func main() {
 		scheduleHandler,
 		chatHandler,
 		messageHandler,
+		teacherInitionalsHandler,
 		logger,
 	)
 

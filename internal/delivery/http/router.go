@@ -27,6 +27,7 @@ func SetupRouter(
 	scheduleHandler *scheduleHandler.ScheduleHandler,
 	chatHandler *chatHandler.ChatHandler,
 	messageHandler *messageHandler.MessageHandler,
+	teacherInitHandler *scheduleHandler.TeacherInitialsHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
 	router := gin.Default()
@@ -45,6 +46,7 @@ func SetupRouter(
 			{
 				schedule.GET("/", scheduleHandler.GetScheduleHandler)
 				schedule.POST("/update", scheduleHandler.UpdateScheduleHandler)
+				schedule.GET("/initials", teacherInitHandler.ListHandler)
 			}
 			subject := protected.Group("/subject")
 			{
