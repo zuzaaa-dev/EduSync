@@ -82,6 +82,10 @@ type SubjectRepository interface {
 type ScheduleRepository interface {
 	Save(ctx context.Context, entries []*domainSchedule.Schedule) error
 	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
+	GetByID(ctx context.Context, id int) (*domainSchedule.Schedule, error)
+	Update(ctx context.Context, id int, upd map[string]interface{}) error
+	Delete(ctx context.Context, id int) error
+	ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error)
 }
 
 // ChatRepository описывает операции для работы с чатами.

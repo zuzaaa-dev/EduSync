@@ -29,7 +29,7 @@ func NewMessageService(repo repository.MessageRepository, logger *logrus.Logger)
 	}
 }
 
-func (s *messageService) GetMessages(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Message, error) {
+func (s *messageService) Messages(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Message, error) {
 	// Проверка, что значения limit и offset корректны
 	if limit <= 0 {
 		limit = 10 // значение по умолчанию

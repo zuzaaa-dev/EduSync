@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	dtoSchedule "EduSync/internal/delivery/http/schedule/dto"
 	domainSchedule "EduSync/internal/domain/schedule"
 	"EduSync/internal/integration/parser/rksi/schedule"
 	"EduSync/internal/integration/parser/rksi/teacher"
@@ -47,8 +48,8 @@ func NewScheduleService(
 	}
 }
 
-// Update получает расписание с сайта, выполняет проверки и сохраняет его в БД.
-func (s *scheduleService) Update(ctx context.Context, groupName string) error {
+// Save получает расписание с сайта, выполняет проверки и сохраняет его в БД.
+func (s *scheduleService) Save(ctx context.Context, groupName string) error {
 	s.log.Infof("Обновление расписания для группы: %s (id: %d)", groupName)
 
 	// Получаем расписание с помощью парсера
@@ -205,6 +206,59 @@ func (s *scheduleService) updateInitials(ctx context.Context) error {
 	return nil
 }
 
+func (s *scheduleService) Update(ctx context.Context, id int, req *dtoSchedule.UpdateScheduleReq) error {
+	upd := make(map[string]interface{})
+	if req.GroupId != nil {
+		upd["group_id"] = *req.GroupId
+	}
+	if req.SubjectID != nil {
+		upd["subject_id"] = *req.SubjectID
+	}
+	if req.Date != nil {
+		upd["date"] = *req.Date
+	}
+	if req.PairNumber != nil {
+		upd["pair_number"] = *req.PairNumber
+	}
+	if req.Classroom != nil {
+		upd["classroom"] = *req.Classroom
+	}
+	if req.TeacherInitialsID != nil {
+		upd["teacher_initials_id"] = *req.TeacherInitialsID
+	}
+	if req.StartTime != nil {
+		upd["start_time"] = *req.StartTime
+	}
+	if req.EndTime != nil {
+		upd["end_time"] = *req.EndTime
+	}
+	if len(upd) == 0 {
+		return nil
+	}
+	if err := s.repo.Update(ctx, id, upd); err != nil {
+		s.log.Errorf("Ошибка: %v", err)
+		return err
+	}
+	return nil
+}
+
+func (s *scheduleService) Delete(ctx context.Context, id int) error {
+	return s.repo.Delete(ctx, id)
+}
+
+func (s *scheduleService) ByID(ctx context.Context, id int) (*domainSchedule.Schedule, error) {
+	return s.repo.GetByID(ctx, id)
+}
+
+func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error) {
+	entries, err := s.repo.ByTeacherInitialsID(ctx, initialsID)
+	if err != nil {
+		s.log.Errorf("Ошибка получения расписания по initials_id=%d: %v", initialsID, err)
+		return nil, fmt.Errorf("не удалось получить расписание")
+	}
+	return entries, nil
+}
+
 // StartWorker запускает периодическое обновление расписания и инициалов.
 func (s *scheduleService) StartWorker(interval time.Duration) {
 	go func() {
@@ -216,7 +270,7 @@ func (s *scheduleService) StartWorker(interval time.Duration) {
 				s.log.Errorf("Ошибка получения групп: %v", err)
 			}
 			for _, group := range groups {
-				err = s.Update(ctx, group.Name)
+				err = s.Save(ctx, group.Name)
 				if err != nil {
 					s.log.Errorf("Ошибка обновления расписания: %v", err)
 				} else {

@@ -47,6 +47,9 @@ func SetupRouter(
 				schedule.GET("/", scheduleHandler.GetScheduleHandler)
 				schedule.POST("/update", scheduleHandler.UpdateScheduleHandler)
 				schedule.GET("/initials", teacherInitHandler.ListHandler)
+				schedule.GET("/teacher_initials/:initials_id", scheduleHandler.GetByTeacherInitialsHandler)
+				schedule.PATCH("/:id", scheduleHandler.UpdateHandler)
+				schedule.DELETE("/:id", scheduleHandler.DeleteHandler)
 			}
 			subject := protected.Group("/subject")
 			{
@@ -70,15 +73,15 @@ func SetupRouter(
 				})
 			})
 			chatGroup := protected.Group("/chats")
-			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler) // Присоединиться к чату (для участников)
+			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)
 			chatGroup.Use(middleware.ChatMembershipMiddleware(chatRepo))
 			{
-				chatGroup.POST("", chatHandler.CreateChatHandler)                                   // Создание чата
-				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)              // Список участников
-				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)                       // Пересоздание приглашения
-				chatGroup.DELETE("/:id", chatHandler.DeleteChatHandler)                             // Удаление чата
-				chatGroup.DELETE("/:id/participants/:userID", chatHandler.RemoveParticipantHandler) // Удаление участника
-				chatGroup.DELETE("/:id/leave", chatHandler.LeaveChatHandler)                        // Покинуть чат
+				chatGroup.POST("", chatHandler.CreateChatHandler)
+				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)
+				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)
+				chatGroup.DELETE("/:id", chatHandler.DeleteChatHandler)
+				chatGroup.DELETE("/:id/participants/:userID", chatHandler.RemoveParticipantHandler)
+				chatGroup.DELETE("/:id/leave", chatHandler.LeaveChatHandler)
 
 				messages := chatGroup.Group("/:id/messages")
 				{

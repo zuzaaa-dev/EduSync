@@ -40,7 +40,7 @@ func (h *MessageHandler) GetMessagesHandler(c *gin.Context) {
 		offset = 0
 	}
 
-	messages, err := h.messageService.GetMessages(c.Request.Context(), chatID, limit, offset)
+	messages, err := h.messageService.Messages(c.Request.Context(), chatID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить сообщения"})
 		return

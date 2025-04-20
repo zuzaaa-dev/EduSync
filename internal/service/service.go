@@ -1,6 +1,7 @@
 package service
 
 import (
+	dtoSchedule "EduSync/internal/delivery/http/schedule/dto"
 	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
 	domainInstitution "EduSync/internal/domain/institution"
@@ -56,8 +57,12 @@ type SubjectService interface {
 
 // ScheduleService описывает методы работы с расписанием.
 type ScheduleService interface {
-	Update(ctx context.Context, groupName string) error
+	Save(ctx context.Context, groupName string) error
 	ByGroupID(ctx context.Context, groupID int) ([]*deliverSchedule.Item, error)
+	ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error)
+	ByID(ctx context.Context, id int) (*domainSchedule.Schedule, error)
+	Update(ctx context.Context, id int, req *dtoSchedule.UpdateScheduleReq) error
+	Delete(ctx context.Context, id int) error
 	StartWorker(interval time.Duration)
 	StartWorkerInitials(interval time.Duration)
 }
@@ -73,7 +78,7 @@ type ChatService interface {
 }
 
 type MessageService interface {
-	GetMessages(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Message, error)
+	Messages(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Message, error)
 	SendMessage(ctx context.Context, msg domainChat.Message) (int, error)
 	DeleteMessage(ctx context.Context, messageID int, requesterID int) error
 	ReplyMessage(ctx context.Context, parentMessageID int, msg domainChat.Message) (int, error)

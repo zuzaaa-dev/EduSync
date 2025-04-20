@@ -1,6 +1,7 @@
 package schedule
 
 import (
+	"EduSync/internal/delivery/http/schedule/dto"
 	"github.com/gin-gonic/gin"
 	"net/http"
 
@@ -28,9 +29,9 @@ func (h *TeacherInitialsHandler) ListHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "не удалось получить инициалы"})
 		return
 	}
-	out := make([]*TeacherInitialDTO, len(initials))
+	out := make([]*dto.TeacherInitialDTO, len(initials))
 	for i, ti := range initials {
-		out[i] = &TeacherInitialDTO{
+		out[i] = &dto.TeacherInitialDTO{
 			ID:       ti.ID,
 			Initials: ti.Initials,
 		}
