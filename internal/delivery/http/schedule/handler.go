@@ -79,8 +79,7 @@ func (h *ScheduleHandler) UpdateHandler(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt("user_id")
-	if err := h.scheduleService.Update(c.Request.Context(), userID, id, &req); err != nil {
+	if err := h.scheduleService.Update(c.Request.Context(), id, &req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления записи"})
 		return
 	}
@@ -102,8 +101,7 @@ func (h *ScheduleHandler) DeleteHandler(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetInt("user_id")
-	if err := h.scheduleService.Delete(c.Request.Context(), userID, id); err != nil {
+	if err := h.scheduleService.Delete(c.Request.Context(), id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка удаления записи"})
 		return
 	}
