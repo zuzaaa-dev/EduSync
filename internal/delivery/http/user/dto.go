@@ -5,13 +5,40 @@ import (
 	"errors"
 )
 
+// LoginUserReq тело запроса на вход
+// swagger:model
+type LoginUserReq struct {
+	// Email пользователя
+	// required: true
+	// example: user@example.com
+	Email string `json:"email" binding:"required,email" example:"student@gmail.com"`
+	// Пароль
+	// required: true
+	// example: mysecretpassword
+	Password string `json:"password" binding:"required" example:"mysecretpassword"`
+}
+
+// RegistrationUserReq — тело запроса на регистрацию.
+// swagger:model
 type RegistrationUserReq struct {
-	Email         string `json:"email" binding:"required,email"`
-	Password      string `json:"password" binding:"required"`
-	FullName      string `json:"full_name" binding:"required"`
-	InstitutionID int    `json:"institution_id" binding:"required"`
-	GroupID       int    `json:"group_id"`
-	IsTeacher     *bool  `json:"is_teacher" binding:"required"`
+	// Email пользователя
+	// required: true
+	Email string `json:"email" binding:"required,email" example:"student@gmail.com"`
+	// Пароль
+	// required: true
+	// example: mysecretpassword
+	Password string `json:"password" binding:"required" example:"mysecretpassword"`
+	// Полное имя пользователя
+	// required: true
+	FullName string `json:"full_name" binding:"required" example:"Фамилия Имя Отчество"`
+	// ID учебного учреждения
+	// required: true
+	InstitutionID int `json:"institution_id" binding:"required" example:"1"`
+	// ID группы
+	GroupID int `json:"group_id" example:"1"`
+	// Является ли пользователь учителем
+	// required: true
+	IsTeacher *bool `json:"is_teacher" binding:"required" example:"false"`
 }
 
 func (r *RegistrationUserReq) ConvertToSvc() (domainUser.CreateUser, error) {
@@ -36,16 +63,50 @@ func NewRegistrationUserReq(email string, password string, fullName string, isTe
 	return &RegistrationUserReq{Email: email, Password: password, FullName: fullName, IsTeacher: &isTeacher}
 }
 
-type LoginUserReq struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
+// RefreshTokenReq тело запроса обновления токена
+// swagger:model
 type RefreshTokenReq struct {
+	// Refresh токен
+	// required: true
+	// example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// ErrorResponse тело запроса обновления токена
+// swagger:model
+type ErrorResponse struct {
+	// Refresh токен
+
+	// required: true
+	// example: Ошибка
+	Error string `json:"error" example:"Ошибка"`
+}
+
+// PairTokenResp — ответ с парами токенов.
+// swagger:model
 type PairTokenResp struct {
-	AccessToken  string `json:"access_token" binding:"required"`
+	// JWT для доступа
+	AccessToken string `json:"access_token" binding:"required"`
+	// JWT для обновления
 	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type ProfileResp struct {
+	// ID пользователя
+	// required: true
+	UserID int `json:"user_id" example:"1"`
+	// Email пользователя
+	// required: true
+	Email string `json:"email" binding:"required,email" example:"student@gmail.com"`
+	// Полное имя пользователя
+	// required: true
+	FullName string `json:"full_name" binding:"required" example:"Фамилия Имя Отчество"`
+	// ID учебного учреждения
+	// required: true
+	InstitutionID int `json:"institution_id" binding:"required" example:"1"`
+	// ID группы
+	GroupID int `json:"group_id" example:"1"`
+	// Является ли пользователь учителем
+	// required: true
+	IsTeacher bool `json:"is_teacher" binding:"required" example:"false"`
 }

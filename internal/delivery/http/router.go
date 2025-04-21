@@ -1,6 +1,7 @@
 package http
 
 import (
+	_ "EduSync/docs/swagger"
 	chatHandler "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
@@ -13,7 +14,8 @@ import (
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-	"net/http"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRouter(
@@ -36,12 +38,14 @@ func SetupRouter(
 	{
 		api.POST("/register", authHandler.RegisterHandler)
 		api.POST("/login", authHandler.LoginHandler)
-		api.POST("/logout", authHandler.LogoutHandler)
+
 		api.POST("/refresh", authHandler.RefreshTokenHandler)
 
 		protected := api.Group("/")
 		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager, log))
 		{
+			protected.POST("/logout", authHandler.LogoutHandler)
+			protected.GET("/profile", authHandler.ProfileHandler)
 			schedule := protected.Group("/schedule")
 			{
 				schedule.GET("/", scheduleHandler.GetScheduleHandler)
@@ -56,22 +60,7 @@ func SetupRouter(
 				subject.GET("/institution/:institution_id", subjectHandler.GetSubjectsByInstitution)
 				subject.GET("/group/:group_id", subjectHandler.GetSubjectsByGroup)
 			}
-			protected.GET("/profile", func(c *gin.Context) {
-				userID, _ := c.Get("user_id")
-				email, _ := c.Get("email")
-				fullName, _ := c.Get("full_name")
-				isTeacher, _ := c.Get("is_teacher")
-				group_id, _ := c.Get("group_id")
-				institution_id, _ := c.Get("institution_id")
-				c.JSON(http.StatusOK, gin.H{
-					"user_id":        userID,
-					"email":          email,
-					"full_name":      fullName,
-					"is_teacher":     isTeacher,
-					"group_id":       group_id,
-					"institution_id": institution_id,
-				})
-			})
+
 			chatGroup := protected.Group("/chats")
 			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)
 			chatGroup.Use(middleware.ChatMembershipMiddleware(chatRepo))
@@ -107,6 +96,6 @@ func SetupRouter(
 		}
 
 	}
-
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
 }

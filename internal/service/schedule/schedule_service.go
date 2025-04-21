@@ -112,7 +112,9 @@ func (s *scheduleService) Save(ctx context.Context, groupName string) error {
 			t, err := s.userSvc.FindTeacherByName(ctx, pe.Teacher)
 			if err != nil {
 				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, nil, group.InstitutionID)
-				s.log.Errorf("ошибка поиска преподавателя: %v", err)
+				if err != nil {
+					s.log.Errorf("ошибка поиска преподавателя: %v", err)
+				}
 			} else if t != nil {
 				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, &t.ID, group.InstitutionID)
 			}

@@ -30,6 +30,17 @@ import (
 	"time"
 )
 
+// @title          EduSync API
+// @version         1.0
+// @description     API системы управления образованием
+
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 "Токен в формате: Bearer {token}"
+
+// @host      localhost:8080
+// @BasePath  /api
 func main() {
 	// Загружаем конфигурацию
 	cfg, err := config.LoadConfig()
