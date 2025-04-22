@@ -1,13 +1,25 @@
 package institution
 
-// Institution представляет учебное заведение.
+// Institution представляет учебное заведение
+// swagger:model
 type Institution struct {
-	ID   int
-	Name string
+	// ID учреждения
+	// example: 1
+	ID int `json:"id"`
+
+	// Название учреждения
+	// example: Московский Политех
+	Name string `json:"name"`
 }
 
-// EmailMask представляет запись почтовой маски для учебного заведения.
+// EmailMask представляет почтовую маску
+// swagger:model
 type EmailMask struct {
-	InstitutionID int    `json:"institution_id"`
-	EmailMask     string `json:"email_mask"`
+	// ID учебного заведения
+	// example: 5
+	InstitutionID int `json:"institution_id"`
+
+	// Маска email
+	// example: "@mospolytech.ru"
+	EmailMask string `json:"email_mask"`
 }

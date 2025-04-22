@@ -20,8 +20,20 @@ func NewMessageHandler(messageService serviceChat.MessageService) *MessageHandle
 	return &MessageHandler{messageService: messageService}
 }
 
-// GetMessagesHandler возвращает список сообщений для чата с поддержкой пагинации.
-// Пример запроса: GET /chats/:id/messages?limit=10&offset=0
+// GetMessagesHandler возвращает список сообщений
+// @Summary      Получить сообщения
+// @Description  Возвращает список сообщений чата с пагинацией
+// @Tags         Messages
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id      path  int  true   "ID чата"
+// @Param        limit   query int  false "Лимит сообщений"  default(10)
+// @Param        offset  query int  false "Смещение"         default(0)
+// @Success      200  {array}   Message
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /chats/{id}/messages [get]
 func (h *MessageHandler) GetMessagesHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)
@@ -48,9 +60,23 @@ func (h *MessageHandler) GetMessagesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, messages)
 }
 
-// SendMessageHandler создаёт новое сообщение вместе с файлами.
-// Запрос должен быть multipart/form-data с полем text, необязательными полями
-// message_group_id, parent_message_id и любым количеством файлов в ключе files.
+// SendMessageHandler отправляет сообщение
+// @Summary      Отправить сообщение
+// @Description  Создает новое сообщение с возможностью прикрепления файлов
+// @Tags         Messages
+// @Security     BearerAuth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        id                 path  int     true  "ID чата"
+// @Param        text               formData  string  false "Текст сообщения"
+// @Param        message_group_id   formData  int     false "ID группы сообщений"
+// @Param        parent_message_id  formData  int     false "ID родительского сообщения"
+// @Param        files              formData  []file  false "Прикрепленные файлы"
+// @Success      201  {object}  object{message_id=int}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /chats/{id}/messages [post]
 func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 	chatID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -111,8 +137,20 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message_id": messageID})
 }
 
-// DeleteMessageHandler удаляет сообщение.
-// Пример запроса: DELETE /chats/:id/messages/:messageID
+// DeleteMessageHandler удаляет сообщение
+// @Summary      Удалить сообщение
+// @Description  Удаляет сообщение (доступно только автору)
+// @Tags         Messages
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id        path  int  true  "ID чата"
+// @Param        messageID path  int  true  "ID сообщения"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /chats/{id}/messages/{messageID} [delete]
 func (h *MessageHandler) DeleteMessageHandler(c *gin.Context) {
 	messageIDStr := c.Param("messageID")
 	messageID, err := strconv.Atoi(messageIDStr)
@@ -136,8 +174,22 @@ func (h *MessageHandler) DeleteMessageHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Сообщение удалено"})
 }
 
-// ReplyMessageHandler создает ответ на сообщение.
-// Пример запроса: POST /chats/:id/messages/:messageID/reply
+// ReplyMessageHandler отвечает на сообщение
+// @Summary      Ответить на сообщение
+// @Description  Создает ответ на указанное сообщение
+// @Tags         Messages
+// @Security     BearerAuth
+// @Accept       multipart/form-data
+// @Produce      json
+// @Param        id        path  int  true  "ID чата"
+// @Param        messageID path  int  true  "ID сообщения"
+// @Param        text      formData  string  false "Текст сообщения"
+// @Param        files     formData  []file  false "Прикрепленные файлы"
+// @Success      201  {object}  object{message_id=int}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /chats/{id}/messages/{messageID}/reply [post]
 func (h *MessageHandler) ReplyMessageHandler(c *gin.Context) {
 	c.Request.PostForm = url.Values{
 		"parent_message_id": {c.Param("messageID")},
@@ -145,8 +197,21 @@ func (h *MessageHandler) ReplyMessageHandler(c *gin.Context) {
 	h.SendMessageHandler(c)
 }
 
-// SearchMessagesHandler ищет сообщения по запросу.
-// Пример запроса: GET /chats/:id/messages/search?query=текст&limit=10&offset=0
+// SearchMessagesHandler ищет сообщения
+// @Summary      Поиск сообщений
+// @Description  Осуществляет полнотекстовый поиск по сообщениям чата
+// @Tags         Messages
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id      path  int     true  "ID чата"
+// @Param        query   query string  true  "Поисковый запрос"
+// @Param        limit   query int     false "Лимит результатов"  default(10)
+// @Param        offset  query int     false "Смещение"           default(0)
+// @Success      200  {array}   Message
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
+// @Router       /chats/{id}/messages/search [get]
 func (h *MessageHandler) SearchMessagesHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)

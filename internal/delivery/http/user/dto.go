@@ -72,16 +72,6 @@ type RefreshTokenReq struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-// ErrorResponse тело запроса обновления токена
-// swagger:model
-type ErrorResponse struct {
-	// Refresh токен
-
-	// required: true
-	// example: Ошибка
-	Error string `json:"error" example:"Ошибка"`
-}
-
 // PairTokenResp — ответ с парами токенов.
 // swagger:model
 type PairTokenResp struct {

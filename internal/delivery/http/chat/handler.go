@@ -19,7 +19,19 @@ func NewChatHandler(chatService service.ChatService) *ChatHandler {
 	return &ChatHandler{chatService: chatService}
 }
 
-// CreateChatHandler создает новый чат (POST /chats).
+// CreateChatHandler создает чат
+// @Summary      Создать чат
+// @Description  Создает новый чат для группы и предмета (только для преподавателей)
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        input  body      object{group_id=int,subject_id=int}  true  "Данные чата"
+// @Success      201  {object}  object{message=string,chat_id=int}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      401  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats [post]
 func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
 	var req struct {
 		GroupID   int `json:"group_id" binding:"required"`
@@ -49,7 +61,19 @@ func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Чат создан", "chat_id": chatID})
 }
 
-// UpdateInviteHandler позволяет владельцу пересоздать invite-ссылку.
+// UpdateInviteHandler обновляет ссылку-приглашение
+// @Summary      Обновить приглашение
+// @Description  Генерирует новую ссылку-приглашение для чата (только владелец)
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID чата"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      401  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id}/invite [put]
 func (h *ChatHandler) UpdateInviteHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)
@@ -72,7 +96,19 @@ func (h *ChatHandler) UpdateInviteHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Приглашение обновлено"})
 }
 
-// JoinChatHandler позволяет пользователю присоединиться к чату (POST /chats/:id/join).
+// JoinChatHandler присоединиться к чату
+// @Summary      Присоединиться к чату
+// @Description  Позволяет студенту присоединиться к чату по ссылке-приглашению
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID чата"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      403  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id}/join [post]
 func (h *ChatHandler) JoinChatHandler(c *gin.Context) {
 	isTeacher, exists := c.Keys["is_teacher"]
 	if !exists {
@@ -105,7 +141,19 @@ func (h *ChatHandler) JoinChatHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Вы успешно присоединились к чату"})
 }
 
-// DeleteChatHandler удаляет чат (только для владельца).
+// DeleteChatHandler удаляет чат
+// @Summary      Удалить чат
+// @Description  Удаляет чат (только для владельца)
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID чата"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      403  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id} [delete]
 func (h *ChatHandler) DeleteChatHandler(c *gin.Context) {
 	isTeacher, exists := c.Keys["is_teacher"]
 	if !exists {
@@ -138,7 +186,18 @@ func (h *ChatHandler) DeleteChatHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Чат удален"})
 }
 
-// GetParticipantsHandler возвращает список участников чата (GET /chats/:id/participants).
+// GetParticipantsHandler получает участников чата
+// @Summary      Участники чата
+// @Description  Возвращает список участников чата
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID чата"
+// @Success      200  {array}   Participant
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id}/participants [get]
 func (h *ChatHandler) GetParticipantsHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)
@@ -155,7 +214,20 @@ func (h *ChatHandler) GetParticipantsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, participants)
 }
 
-// RemoveParticipantHandler удаляет участника (только для владельца).
+// RemoveParticipantHandler удаляет участника
+// @Summary      Удалить участника
+// @Description  Удаляет участника из чата (только владелец)
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id      path  int  true  "ID чата"
+// @Param        userID  path  int  true  "ID участника"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      403  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id}/participants/{userID} [delete]
 func (h *ChatHandler) RemoveParticipantHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	participantIDStr := c.Param("userID")
@@ -184,7 +256,18 @@ func (h *ChatHandler) RemoveParticipantHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Участник удален"})
 }
 
-// LeaveChatHandler – участник покидает чат.
+// LeaveChatHandler покинуть чат
+// @Summary      Покинуть чат
+// @Description  Позволяет участнику покинуть чат
+// @Tags         Chats
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID чата"
+// @Success      200  {object}  object{message=string}
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /chats/{id}/leave [post]
 func (h *ChatHandler) LeaveChatHandler(c *gin.Context) {
 	chatIDStr := c.Param("id")
 	chatID, err := strconv.Atoi(chatIDStr)

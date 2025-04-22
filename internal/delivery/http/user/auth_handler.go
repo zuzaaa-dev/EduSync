@@ -26,8 +26,8 @@ func NewAuthHandler(authService service.UserService) *AuthHandler {
 // @Produce      json
 // @Param        input  body      RegistrationUserReq  true  "Данные для регистрации"
 // @Success      201    {object}  object{message=string,user_id=int}
-// @Failure      400    {object}  ErrorResponse
-// @Failure      409    {object}  ErrorResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      409    {object}  dto.ErrorResponse
 // @Router       /register [post]
 func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 	var req RegistrationUserReq
@@ -65,8 +65,8 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 // @Produce      json
 // @Param        input  body      LoginUserReq  true  "Данные для входа"
 // @Success      200    {object}  PairTokenResp
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Router       /login [post]
 func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	var req LoginUserReq
@@ -97,8 +97,8 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 // @Tags         Auth
 // @Security     BearerAuth
 // @Success      200  {object}  object{message=string}
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Failure      500  {object}  dto.ErrorResponse
 // @Router       /logout [post]
 func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 	token := c.GetHeader("Authorization")
@@ -123,8 +123,8 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 // @Produce      json
 // @Param        input  body      RefreshTokenReq  true  "Refresh токен"
 // @Success      200    {object}  PairTokenResp
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Router       /refresh [post]
 func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 	var req RefreshTokenReq
@@ -154,8 +154,6 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 // @Tags         Auth
 // @Security     BearerAuth
 // @Success      200  {object}  ProfileResp
-// @Failure      401  {object}  ErrorResponse
-// @Failure      500  {object}  ErrorResponse
 // @Router       /profile [get]
 func (h *AuthHandler) ProfileHandler(c *gin.Context) {
 	userID, _ := c.Get("user_id")

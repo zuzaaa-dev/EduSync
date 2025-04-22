@@ -18,7 +18,17 @@ func NewGroupHandler(service service.GroupService) *GroupHandler {
 	return &GroupHandler{service: service}
 }
 
-// GetGroupsByInstitutionID возвращает группы для указанного учреждения.
+// GetGroupsByInstitutionID возвращает группы учреждения
+// @Summary      Получить группы учреждения
+// @Description  Возвращает список всех групп для указанного учебного заведения
+// @Tags         Groups
+// @Accept       json
+// @Produce      json
+// @Param        institution_id  path  int  true  "ID учебного заведения"
+// @Success      200  {array}   Group
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /institutions/{institution_id}/groups [get]
 func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
 	institutionIDStr := c.Param("institution_id")
 	institutionID, err := strconv.Atoi(institutionIDStr)
@@ -35,7 +45,17 @@ func (h *GroupHandler) GetGroupsByInstitutionID(c *gin.Context) {
 	c.JSON(http.StatusOK, groups)
 }
 
-// GetGroupByID возвращает группы для указанного учреждения.
+// GetGroupByID возвращает группу по ID
+// @Summary      Получить группу по ID
+// @Description  Возвращает информацию о конкретной группе
+// @Tags         Groups
+// @Accept       json
+// @Produce      json
+// @Param        id  path  int  true  "ID группы"
+// @Success      200  {object}  Group
+// @Failure      400  {object} dto.ErrorResponse
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /groups/{id} [get]
 func (h *GroupHandler) GetGroupByID(c *gin.Context) {
 	institutionIDStr := c.Param("id")
 	institutionID, err := strconv.Atoi(institutionIDStr)

@@ -16,7 +16,16 @@ func NewTeacherInitialsHandler(svc service.TeacherInitialsService) *TeacherIniti
 	return &TeacherInitialsHandler{svc: svc}
 }
 
-// ListHandler — GET /schedule/initials
+// ListHandler возвращает список инициалов
+// @Summary      Список инициалов
+// @Description  Возвращает список инициалов преподавателей для учреждения
+// @Tags         Teachers
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Success      200  {array}   dto.TeacherInitialDTO
+// @Failure      500  {object} dto.ErrorResponse
+// @Router       /schedule/initials [get]
 func (h *TeacherInitialsHandler) ListHandler(c *gin.Context) {
 	ctx := c.Request.Context()
 	institutionID, exist := c.Get("institution_id")

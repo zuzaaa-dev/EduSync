@@ -3,6 +3,7 @@ package schedule
 import "time"
 
 // Schedule представляет доменную модель записи расписания.
+// swagger:model
 type Schedule struct {
 	ID                int       `json:"id"`
 	GroupID           int       `json:"group_id"`
@@ -15,6 +16,8 @@ type Schedule struct {
 	EndTime           time.Time `json:"end_time"`
 }
 
+// TeacherInitials доменная модель записи инициалов преподавателя
+// swagger:model
 type TeacherInitials struct {
 	ID            int    `json:"id"`
 	Initials      string `json:"initials"`

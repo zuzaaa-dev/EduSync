@@ -1,8 +1,17 @@
 package subject
 
-// Subject представляет предмет, связанный с учебным заведением.
+// Subject модель учебного предмета
+// swagger:model
 type Subject struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	InstitutionID int    `json:"institution_id"`
+	// ID предмета
+	// example: 1
+	ID int `json:"id"`
+
+	// Название предмета
+	// example: Математический анализ
+	Name string `json:"name"`
+
+	// ID учебного заведения
+	// example: 5
+	InstitutionID int `json:"institution_id"`
 }

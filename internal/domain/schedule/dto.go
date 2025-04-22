@@ -2,6 +2,7 @@ package schedule
 
 import "time"
 
+// swagger:model
 type Item struct {
 	ID              int       `json:"id"`
 	GroupID         int       `json:"group_id"`

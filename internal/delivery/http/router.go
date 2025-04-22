@@ -25,7 +25,7 @@ func SetupRouter(
 	jwtManager *util.JWTManager,
 	groupHandler *groupHandler.GroupHandler,
 	instHandler *instituteHandler.InstitutionHandler,
-	subjectHandler *subjectHandler.InstitutionHandler,
+	subjectHandler *subjectHandler.SubjectHandler,
 	scheduleHandler *scheduleHandler.ScheduleHandler,
 	chatHandler *chatHandler.ChatHandler,
 	messageHandler *messageHandler.MessageHandler,
