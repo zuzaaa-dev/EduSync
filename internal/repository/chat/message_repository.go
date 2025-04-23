@@ -30,7 +30,7 @@ func (r *messageRepository) CreateMessage(ctx context.Context, msg *domainChat.M
 	return id, nil
 }
 
-func (r *messageRepository) GetMessageByID(ctx context.Context, msgID int) (*domainChat.Message, error) {
+func (r *messageRepository) ByID(ctx context.Context, msgID int) (*domainChat.Message, error) {
 	msg := &domainChat.Message{}
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, chat_id, user_id, text, message_group_id, parent_message_id, created_at
@@ -42,7 +42,7 @@ func (r *messageRepository) GetMessageByID(ctx context.Context, msgID int) (*dom
 	return msg, nil
 }
 
-func (r *messageRepository) GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error) {
+func (r *messageRepository) Messages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, chat_id, user_id, text, message_group_id, parent_message_id, created_at 
 		FROM messages 
@@ -104,7 +104,7 @@ func (r *messageRepository) SearchMessages(ctx context.Context, chatID int, quer
 	return msgs, nil
 }
 
-func (r *messageRepository) GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
+func (r *messageRepository) MessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, file_url FROM message_files WHERE message_id = $1
 	`, messageID)

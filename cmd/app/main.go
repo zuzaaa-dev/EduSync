@@ -6,6 +6,7 @@ import (
 	chat3 "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
+	materialHand "EduSync/internal/delivery/http/material"
 	chat4 "EduSync/internal/delivery/http/message"
 	schedule2 "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
@@ -16,12 +17,14 @@ import (
 	"EduSync/internal/repository/chat"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
+	materialRepository "EduSync/internal/repository/material"
 	scheduleRepository "EduSync/internal/repository/schedule"
 	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
 	chat2 "EduSync/internal/service/chat"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
+	materialServ "EduSync/internal/service/material"
 	scheduleServ "EduSync/internal/service/schedule"
 	subjectServ "EduSync/internal/service/subject"
 	userService "EduSync/internal/service/user"
@@ -78,9 +81,9 @@ func main() {
 	teacherInitionalsRepo := scheduleRepository.NewTeacherInitialsRepository(db)
 	institutionRepo := institutionRepository.NewRepository(db)
 	emailMaskRepo := institutionRepository.NewEmailMaskRepository(db)
+	materialRepo := materialRepository.NewFileRepository(db)
 	chatRepo := chat.NewChatRepository(db)
 	messageRepo := chat.NewMessageRepository(db)
-
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
@@ -94,6 +97,7 @@ func main() {
 		jwtManager,
 		logger,
 	)
+	materialService := materialServ.NewFileService(materialRepo, messageRepo, chatRepo, logger)
 	groupService := groupServ.NewGroupService(groupRepo, groupParse, logger)
 	scheduleService := scheduleServ.NewScheduleService(
 		scheduleRepo,
@@ -120,6 +124,7 @@ func main() {
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
 	chatHandler := chat3.NewChatHandler(chatSvc)
 	messageHandler := chat4.NewMessageHandler(messageSvc)
+	materialHandler := materialHand.NewFileHandler(materialService)
 	teacherInitionalsHandler := schedule2.NewTeacherInitialsHandler(teacherInitionalsService)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, chatRepo,
@@ -131,6 +136,7 @@ func main() {
 		scheduleHandler,
 		chatHandler,
 		messageHandler,
+		materialHandler,
 		teacherInitionalsHandler,
 		logger,
 	)

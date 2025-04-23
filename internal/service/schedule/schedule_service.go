@@ -165,7 +165,7 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		if e.TeacherInitialsID != nil {
 			ti, err := s.teacherInitialsRepo.GetByID(ctx, *e.TeacherInitialsID)
 			if err != nil {
-				return nil, fmt.Errorf("initialsRepo.GetByID: %w", err)
+				return nil, fmt.Errorf("initialsRepo.ByID: %w", err)
 			}
 			if ti != nil {
 				tid = ti.TeacherID

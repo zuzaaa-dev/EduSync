@@ -5,6 +5,7 @@ import (
 	chatHandler "EduSync/internal/delivery/http/chat"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
+	materialHandler "EduSync/internal/delivery/http/material"
 	messageHandler "EduSync/internal/delivery/http/message"
 	scheduleHandler "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
@@ -29,6 +30,7 @@ func SetupRouter(
 	scheduleHandler *scheduleHandler.ScheduleHandler,
 	chatHandler *chatHandler.ChatHandler,
 	messageHandler *messageHandler.MessageHandler,
+	materialHandler *materialHandler.MaterialHandler,
 	teacherInitHandler *scheduleHandler.TeacherInitialsHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
@@ -63,14 +65,15 @@ func SetupRouter(
 
 			chatGroup := protected.Group("/chats")
 			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)
+			chatGroup.POST("", chatHandler.CreateChatHandler)
 			chatGroup.Use(middleware.ChatMembershipMiddleware(chatRepo))
 			{
-				chatGroup.POST("", chatHandler.CreateChatHandler)
 				chatGroup.GET("/:id/participants", chatHandler.GetParticipantsHandler)
 				chatGroup.PUT("/:id/invite", chatHandler.UpdateInviteHandler)
 				chatGroup.DELETE("/:id", chatHandler.DeleteChatHandler)
 				chatGroup.DELETE("/:id/participants/:userID", chatHandler.RemoveParticipantHandler)
 				chatGroup.DELETE("/:id/leave", chatHandler.LeaveChatHandler)
+				//chatGroup.Static("/files", "./uploads")
 
 				messages := chatGroup.Group("/:id/messages")
 				{
@@ -80,6 +83,7 @@ func SetupRouter(
 					messages.POST("/:messageID/reply", messageHandler.ReplyMessageHandler)
 					messages.GET("/search", messageHandler.SearchMessagesHandler)
 				}
+				protected.GET("/files/:id", materialHandler.GetFileHandler)
 			}
 
 		}

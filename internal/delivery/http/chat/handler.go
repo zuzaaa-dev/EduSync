@@ -88,6 +88,11 @@ func (h *ChatHandler) UpdateInviteHandler(c *gin.Context) {
 		return
 	}
 
+	isTeacher := c.GetBool("is_teacher")
+	if !isTeacher {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Неизвестный владелец"})
+		return
+	}
 	err = h.chatService.RecreateInvite(c.Request.Context(), chatID, ownerID.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось обновить приглашение"})
@@ -206,7 +211,7 @@ func (h *ChatHandler) GetParticipantsHandler(c *gin.Context) {
 		return
 	}
 
-	participants, err := h.chatService.GetChatParticipants(c.Request.Context(), chatID)
+	participants, err := h.chatService.ChatParticipants(c.Request.Context(), chatID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить список участников"})
 		return

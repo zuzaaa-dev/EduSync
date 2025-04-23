@@ -48,3 +48,19 @@ type FileInfo struct {
 	// example: https://storage.example.com/files/abc123.pdf
 	FileURL string `json:"file_url"`
 }
+
+// File описывает запись из таблицы message_files.
+// swagger:model
+type File struct {
+	// ID файла
+	// example: 1
+	ID int `json:"id"`
+
+	// MessageID сообщения, к которому прикреплен файл
+	// example: 1
+	MessageID int `json:"message_id"`
+
+	// FileURL ссылка на файл
+	// example: uploads/123_report.pdf
+	FileURL string `json:"file_url"`
+}

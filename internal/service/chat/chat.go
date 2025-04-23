@@ -40,8 +40,8 @@ func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (int, e
 	return chatID, nil
 }
 
-// GetChatParticipants возвращает список участников чата.
-func (s *chatService) GetChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error) {
+// ChatParticipants возвращает список участников чата.
+func (s *chatService) ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error) {
 	participants, err := s.repo.GetParticipants(ctx, chatID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения участников для чата %d: %v", chatID, err)
@@ -51,6 +51,7 @@ func (s *chatService) GetChatParticipants(ctx context.Context, chatID int) ([]*d
 }
 
 func (s *chatService) JoinChat(ctx context.Context, chatID, userID int) error {
+	// TODO сделать проверку ввода приглос ссылки или кода
 	err := s.repo.JoinChat(ctx, chatID, userID)
 	if err != nil {
 		s.log.Errorf("Ошибка присоединения пользователя %d к чату %d: %v", userID, chatID, err)
@@ -63,6 +64,7 @@ func (s *chatService) JoinChat(ctx context.Context, chatID, userID int) error {
 // RecreateInvite генерирует новый join_code и invite_link, если запрос делает владелец.
 func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID int) error {
 	// Проверить, что запрашивающий является владельцем чата (это можно проверить через GetChatByID)
+	// TODO добавить возврат новой пригласительной ссылки
 	chat, err := s.repo.GetChatByID(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("ошибка получения чата: %w", err)
@@ -70,7 +72,7 @@ func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID in
 	if chat == nil || chat.OwnerID != ownerID {
 		return fmt.Errorf("нет прав на изменение приглашения чата")
 	}
-	newCode := generateRandomCode(6)
+	newCode := generateRandomCode(10)
 	newLink := fmt.Sprintf("https://yourapp.com/invite/%s", newCode)
 	if err := s.repo.UpdateChatInvite(ctx, chatID, newCode, newLink); err != nil {
 		s.log.Errorf("Ошибка обновления приглашения: %v", err)

@@ -73,7 +73,7 @@ func (r *teacherInitialsRepo) GetByID(ctx context.Context, id int) (*domain.Teac
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("GetByID teacher_initials: %w", err)
+		return nil, fmt.Errorf("ByID teacher_initials: %w", err)
 	}
 	return ti, nil
 }

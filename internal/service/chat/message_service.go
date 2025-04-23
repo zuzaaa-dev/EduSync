@@ -37,7 +37,7 @@ func (s *messageService) Messages(ctx context.Context, chatID, limit, offset int
 	if offset < 0 {
 		offset = 0
 	}
-	msgs, err := s.repo.GetMessages(ctx, chatID, limit, offset)
+	msgs, err := s.repo.Messages(ctx, chatID, limit, offset)
 	if err != nil {
 		s.log.Errorf("Ошибка получения сообщений для чата %d: %v", chatID, err)
 		return nil, fmt.Errorf("не удалось получить сообщения")
@@ -45,9 +45,9 @@ func (s *messageService) Messages(ctx context.Context, chatID, limit, offset int
 
 	// Для каждого сообщения добираем список файлов
 	for _, m := range msgs {
-		files, ferr := s.repo.GetMessageFileInfo(ctx, m.ID)
+		files, ferr := s.repo.MessageFileInfo(ctx, m.ID)
 		if ferr != nil {
-			s.log.Errorf("GetMessageFileInfo(%d): %v", m.ID, ferr)
+			s.log.Errorf("MessageFileInfo(%d): %v", m.ID, ferr)
 		} else {
 			m.Files = make([]domainChat.FileInfo, len(files))
 			for i, f := range files {
@@ -85,7 +85,7 @@ func (s *messageService) SendMessage(ctx context.Context, msg domainChat.Message
 }
 
 func (s *messageService) DeleteMessage(ctx context.Context, messageID int, requesterID int) error {
-	msg, err := s.repo.GetMessageByID(ctx, messageID)
+	msg, err := s.repo.ByID(ctx, messageID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения сообщения %d: %v", messageID, err)
 		return fmt.Errorf("не удалось удалить сообщение")
@@ -110,9 +110,9 @@ func (s *messageService) DeleteMessage(ctx context.Context, messageID int, reque
 	}()
 
 	// 1) список файлов (чтобы удалить физически)
-	files, ferr := s.repo.GetMessageFileInfo(ctx, messageID)
+	files, ferr := s.repo.MessageFileInfo(ctx, messageID)
 	if ferr != nil {
-		s.log.Error("GetMessageFileInfo:", ferr)
+		s.log.Error("MessageFileInfo:", ferr)
 		return ErrInternal
 	}
 
@@ -156,9 +156,9 @@ func (s *messageService) SearchMessages(ctx context.Context, chatID int, query s
 		return nil, fmt.Errorf("не удалось найти сообщения")
 	}
 	for _, m := range msgs {
-		files, ferr := s.repo.GetMessageFileInfo(ctx, m.ID)
+		files, ferr := s.repo.MessageFileInfo(ctx, m.ID)
 		if ferr != nil {
-			s.log.Errorf("GetMessageFileInfo(%d): %v", m.ID, ferr)
+			s.log.Errorf("MessageFileInfo(%d): %v", m.ID, ferr)
 		} else {
 			m.Files = make([]domainChat.FileInfo, len(files))
 			for i, f := range files {
@@ -169,8 +169,8 @@ func (s *messageService) SearchMessages(ctx context.Context, chatID int, query s
 	return msgs, nil
 }
 
-func (s *messageService) GetMessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
-	files, err := s.repo.GetMessageFileInfo(ctx, messageID)
+func (s *messageService) MessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error) {
+	files, err := s.repo.MessageFileInfo(ctx, messageID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения файлов для сообщения %d: %v", messageID, err)
 		return nil, fmt.Errorf("не удалось получить информацию о файлах")
@@ -207,7 +207,6 @@ func (s *messageService) SendMessageWithFiles(
 		return 0, errors.New("failed to save message")
 	}
 
-	// 2) Сохраняем файлы (если есть)
 	for _, fh := range files {
 		// a) сохраняем физически и получаем URL
 		dst := fmt.Sprintf("uploads/%d_%s", msgID, fh.Filename)

@@ -205,7 +205,7 @@ func (h *MessageHandler) ReplyMessageHandler(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id      path  int     true  "ID чата"
-// @Param        query   query string  true  "Поисковый запрос"
+// @Param        query query string  true  "Поисковый запрос"
 // @Param        limit   query int     false "Лимит результатов"  default(10)
 // @Param        offset  query int     false "Смещение"           default(0)
 // @Success      200  {array}   Message

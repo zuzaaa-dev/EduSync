@@ -12,6 +12,7 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
+	"os"
 	"time"
 )
 
@@ -69,7 +70,7 @@ type ScheduleService interface {
 
 type ChatService interface {
 	CreateChat(ctx context.Context, c domainChat.Chat) (int, error)
-	GetChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
+	ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
 	JoinChat(ctx context.Context, chatID, userID int) error
 	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
 	DeleteChat(ctx context.Context, chatID int, ownerID int) error
@@ -83,6 +84,11 @@ type MessageService interface {
 	DeleteMessage(ctx context.Context, messageID int, requesterID int) error
 	ReplyMessage(ctx context.Context, parentMessageID int, msg domainChat.Message) (int, error)
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
-	GetMessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+	MessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
 	SendMessageWithFiles(ctx context.Context, msg domainChat.Message, files []*multipart.FileHeader, c *gin.Context) (int, error)
+}
+
+// FileService отдаёт файл по id, проверяя, что пользователь — участник чата.
+type FileService interface {
+	File(ctx context.Context, userID, fileID int) (*os.File, string, error)
 }

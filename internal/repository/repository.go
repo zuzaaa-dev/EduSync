@@ -104,16 +104,22 @@ type ChatRepository interface {
 }
 
 type MessageRepository interface {
-	GetMessageByID(ctx context.Context, msgID int) (*domainChat.Message, error)
+	ByID(ctx context.Context, msgID int) (*domainChat.Message, error)
 	CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error)
-	GetMessages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error)
+	Messages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error)
 	DeleteMessage(ctx context.Context, messageID int) error
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
-	GetMessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
+	MessageFileInfo(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
 
 	BeginTx(ctx context.Context) (*sql.Tx, error)
 	CreateMessageTx(ctx context.Context, tx *sql.Tx, msg *domainChat.Message) (int, error)
 	CreateMessageFileTx(ctx context.Context, tx *sql.Tx, messageID int, fileURL string) error
 	DeleteMessageFilesTx(ctx context.Context, tx *sql.Tx, messageID int) error
 	DeleteMessageTx(ctx context.Context, tx *sql.Tx, messageID int) error
+}
+
+// FileRepository описывает доступ к таблице message_files.
+type FileRepository interface {
+	// ByID возвращает запись о файле (включая message_id!).
+	ByID(ctx context.Context, fileID int) (*domainChat.File, error)
 }
