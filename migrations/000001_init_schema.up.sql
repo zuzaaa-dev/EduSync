@@ -124,10 +124,10 @@ CREATE TABLE messages
     user_id           INT NOT NULL,
     text              TEXT,
     message_group_id  INT,
-    parent_message_id INT, -- Ссылка на родительское сообщение (NULL, если это не ответ)
+    parent_message_id INT,
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CHECK (text IS NOT NULL OR message_group_id IS NOT NULL),
-    FOREIGN KEY (chat_id) REFERENCES chats (id),
+    FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (message_group_id) REFERENCES messages (id),
     FOREIGN KEY (parent_message_id) REFERENCES messages (id) ON DELETE SET NULL

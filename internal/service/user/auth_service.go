@@ -111,7 +111,7 @@ func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) 
 		}).Create(ctx, tx, userID, user.InstitutionID)
 	}
 	if err != nil {
-		s.log.Errorf("Ошибка создания пользователя:")
+		s.log.Errorf("Ошибка создания пользователя: %v", err)
 		return 0, err
 	}
 	// Фиксируем транзакцию

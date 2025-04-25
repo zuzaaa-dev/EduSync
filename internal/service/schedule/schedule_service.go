@@ -210,8 +210,8 @@ func (s *scheduleService) updateInitials(ctx context.Context) error {
 
 func (s *scheduleService) Update(ctx context.Context, id int, req *dtoSchedule.UpdateScheduleReq) error {
 	upd := make(map[string]interface{})
-	if req.GroupId != nil {
-		upd["group_id"] = *req.GroupId
+	if req.GroupID != nil {
+		upd["group_id"] = *req.GroupID
 	}
 	if req.SubjectID != nil {
 		upd["subject_id"] = *req.SubjectID
@@ -242,6 +242,20 @@ func (s *scheduleService) Update(ctx context.Context, id int, req *dtoSchedule.U
 		return err
 	}
 	return nil
+}
+
+func (s *scheduleService) Create(ctx context.Context, req *dtoSchedule.CreateScheduleReq) (int, error) {
+	entry := &domainSchedule.Schedule{
+		GroupID:           req.GroupID,
+		SubjectID:         req.SubjectID,
+		Date:              req.Date,
+		PairNumber:        req.PairNumber,
+		Classroom:         req.Classroom,
+		TeacherInitialsID: req.TeacherInitialsID,
+		StartTime:         req.StartTime,
+		EndTime:           req.EndTime,
+	}
+	return s.repo.Create(ctx, entry)
 }
 
 func (s *scheduleService) Delete(ctx context.Context, id int) error {

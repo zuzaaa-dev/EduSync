@@ -5,6 +5,7 @@ import (
 	"EduSync/internal/service"
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -25,19 +26,19 @@ func NewChatService(repo repository.ChatRepository, logger *logrus.Logger) servi
 }
 
 // CreateChat создает чат и генерирует приглашения.
-func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (int, error) {
+func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error) {
 	// Проверка, что владелец - учитель, и другие бизнес-правила можно добавить здесь.
 	// Генерация join_code и invite_link:
-	c.JoinCode = generateRandomCode(6)
+	c.JoinCode = generateRandomCode(10)
 	c.InviteLink = fmt.Sprintf("https://yourapp.com/invite/%s", c.JoinCode)
 	c.CreatedAt = time.Now()
-	chatID, err := s.repo.CreateChat(ctx, &c)
+	chat, err := s.repo.CreateChat(ctx, &c)
 	if err != nil {
 		s.log.Errorf("Ошибка создания чата: %v", err)
-		return 0, fmt.Errorf("не удалось создать чат")
+		return nil, fmt.Errorf("не удалось создать чат")
 	}
-	s.log.Infof("Чат создан с ID: %d", chatID)
-	return chatID, nil
+	s.log.Infof("Чат создан с ID: %d", chat.ID)
+	return chat, nil
 }
 
 // ChatParticipants возвращает список участников чата.
@@ -132,7 +133,7 @@ func generateRandomCode(length int) string {
 	var code strings.Builder
 	// Можно использовать math/rand или crypto/rand для большей безопасности.
 	for i := 0; i < length; i++ {
-		code.WriteByte(charset[time.Now().UnixNano()%int64(len(charset))])
+		code.WriteByte(charset[rand.Intn(length)])
 	}
 	return code.String()
 }

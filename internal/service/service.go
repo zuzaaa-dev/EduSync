@@ -59,6 +59,7 @@ type SubjectService interface {
 // ScheduleService описывает методы работы с расписанием.
 type ScheduleService interface {
 	Save(ctx context.Context, groupName string) error
+	Create(ctx context.Context, req *dtoSchedule.CreateScheduleReq) (int, error)
 	ByGroupID(ctx context.Context, groupID int) ([]*deliverSchedule.Item, error)
 	ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error)
 	ByID(ctx context.Context, id int) (*domainSchedule.Schedule, error)
@@ -69,10 +70,10 @@ type ScheduleService interface {
 }
 
 type ChatService interface {
-	CreateChat(ctx context.Context, c domainChat.Chat) (int, error)
+	CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error)
+	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
 	ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
 	JoinChat(ctx context.Context, chatID, userID int) error
-	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
 	DeleteChat(ctx context.Context, chatID int, ownerID int) error
 	RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error

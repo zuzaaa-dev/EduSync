@@ -62,6 +62,23 @@ func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domain
 	return tx.Commit()
 }
 
+func (r *PostgresScheduleRepository) Create(ctx context.Context, s *domainSchedule.Schedule) (int, error) {
+	var id int
+	query := `
+		INSERT INTO schedule (group_id, subject_id, date, pair_number, classroom, teacher_initials_id, start_time, end_time)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id
+	`
+	err := r.db.QueryRowContext(ctx, query,
+		s.GroupID, s.SubjectID, s.Date, s.PairNumber, s.Classroom,
+		s.TeacherInitialsID, s.StartTime, s.EndTime,
+	).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка создания записи расписания: %w", err)
+	}
+	return id, nil
+}
+
 // ByGroupID возвращает расписание для заданной группы.
 func (r *PostgresScheduleRepository) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error) {
 	rows, err := r.db.QueryContext(ctx, `

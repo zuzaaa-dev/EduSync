@@ -1,6 +1,7 @@
 package chat
 
 import (
+	chatDTO "EduSync/internal/delivery/dto/chat"
 	domainChat "EduSync/internal/domain/chat"
 	"net/http"
 	"strconv"
@@ -33,11 +34,8 @@ func NewChatHandler(chatService service.ChatService) *ChatHandler {
 // @Failure      500  {object} dto.ErrorResponse
 // @Router       /chats [post]
 func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
-	var req struct {
-		GroupID   int `json:"group_id" binding:"required"`
-		SubjectID int `json:"subject_id" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var req = chatDTO.CreateChatRequest
+	if err := c.ShouldBindJSON(&chatDTO.CreateChatRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
@@ -53,12 +51,15 @@ func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
 		OwnerID:   ownerID.(int),
 		SubjectID: req.SubjectID,
 	}
-	chatID, err := h.chatService.CreateChat(c.Request.Context(), chat)
+	chatInfo, err := h.chatService.CreateChat(c.Request.Context(), chat)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать чат"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "Чат создан", "chat_id": chatID})
+	c.JSON(http.StatusCreated, gin.H{
+		"message":   "Чат создан",
+		"chat_info": chatDTO.ConvertChatToDTO(chatInfo),
+	})
 }
 
 // UpdateInviteHandler обновляет ссылку-приглашение

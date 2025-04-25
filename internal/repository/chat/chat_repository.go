@@ -19,16 +19,17 @@ func NewChatRepository(db *sql.DB) repository.ChatRepository {
 	return &chatRepository{db: db}
 }
 
-func (r *chatRepository) CreateChat(ctx context.Context, c *domainChat.Chat) (int, error) {
-	var chatID int
+func (r *chatRepository) CreateChat(ctx context.Context, c *domainChat.Chat) (*domainChat.Chat, error) {
 	err := r.db.QueryRowContext(ctx, `
 		INSERT INTO chats (group_id, owner_id, subject_id, join_code, invite_link, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
-	`, c.GroupID, c.OwnerID, c.SubjectID, c.JoinCode, c.InviteLink, time.Now()).Scan(&chatID)
+		VALUES ($1, $2, $3, $4, $5, $6) 
+		RETURNING id
+	`, c.GroupID, c.OwnerID, c.SubjectID, c.JoinCode, c.InviteLink, time.Now()).
+		Scan(&c.ID)
 	if err != nil {
-		return 0, fmt.Errorf("ошибка создания чата: %w", err)
+		return nil, fmt.Errorf("ошибка создания чата: %w", err)
 	}
-	return chatID, nil
+	return c, nil
 }
 
 func (r *chatRepository) GetChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error) {

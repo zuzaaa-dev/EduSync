@@ -81,6 +81,7 @@ type SubjectRepository interface {
 // ScheduleRepository описывает контракт доступа к данным расписания.
 type ScheduleRepository interface {
 	Save(ctx context.Context, entries []*domainSchedule.Schedule) error
+	Create(ctx context.Context, s *domainSchedule.Schedule) (int, error)
 	ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Schedule, error)
 	GetByID(ctx context.Context, id int) (*domainSchedule.Schedule, error)
 	Update(ctx context.Context, id int, upd map[string]interface{}) error
@@ -90,7 +91,7 @@ type ScheduleRepository interface {
 
 // ChatRepository описывает операции для работы с чатами.
 type ChatRepository interface {
-	CreateChat(ctx context.Context, chat *domainChat.Chat) (int, error)
+	CreateChat(ctx context.Context, chat *domainChat.Chat) (*domainChat.Chat, error)
 	GetChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error)
 	DeleteChat(ctx context.Context, chatID int) error
 	UpdateChatInvite(ctx context.Context, chatID int, newJoinCode, newInviteLink string) error

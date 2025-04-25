@@ -5,6 +5,7 @@ import (
 	"EduSync/internal/service"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -184,4 +185,44 @@ func (h *ScheduleHandler) GetByTeacherInitialsHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, entries)
+}
+
+// swagger:route POST /schedule schedule createScheduleEntry
+// @Summary      Добавить запись в расписание
+// @Description  Создаёт новую запись расписания (только для преподавателей)
+// @Tags         Schedule
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        input body dto.CreateScheduleReq true "Данные расписания"
+// @Success      201 {object} object{message=string,id=int}
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      403 {object} dto.ErrorResponse
+// @Failure      409 {object} dto.ErrorResponse "Нарушение уникальности пары"
+// @Failure      500 {object} dto.ErrorResponse
+// @Router       /schedule [post]
+func (h *ScheduleHandler) CreateHandler(c *gin.Context) {
+	isTeacher, ok := c.Get("is_teacher")
+	if !ok || !isTeacher.(bool) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ разрешён только преподавателям"})
+		return
+	}
+
+	var req dto.CreateScheduleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
+		return
+	}
+
+	id, err := h.scheduleService.Create(c.Request.Context(), &req)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key") {
+			c.JSON(http.StatusConflict, gin.H{"error": "Пара уже занята"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка создания записи"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "расписание добавлено", "id": id})
 }

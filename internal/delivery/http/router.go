@@ -51,6 +51,7 @@ func SetupRouter(
 			schedule := protected.Group("/schedule")
 			{
 				schedule.GET("/", scheduleHandler.GetScheduleHandler)
+				schedule.POST("/", scheduleHandler.CreateHandler)
 				schedule.POST("/update", scheduleHandler.UpdateScheduleHandler)
 				schedule.GET("/initials", teacherInitHandler.ListHandler)
 				schedule.GET("/teacher_initials/:initials_id", scheduleHandler.GetByTeacherInitialsHandler)
