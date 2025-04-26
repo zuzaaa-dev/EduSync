@@ -71,6 +71,7 @@ type ScheduleService interface {
 
 type ChatService interface {
 	CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error)
+	ListForUser(ctx context.Context, userID int, isTeacher bool) ([]*domainChat.Chat, error)
 	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
 	ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
 	JoinChat(ctx context.Context, chatID, userID int) error

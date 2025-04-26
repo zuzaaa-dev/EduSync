@@ -32,7 +32,7 @@ func (r *chatRepository) CreateChat(ctx context.Context, c *domainChat.Chat) (*d
 	return c, nil
 }
 
-func (r *chatRepository) GetChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error) {
+func (r *chatRepository) ChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error) {
 	var c domainChat.Chat
 	err := r.db.QueryRowContext(ctx, `
 		SELECT id, group_id, owner_id, subject_id, join_code, invite_link, created_at
@@ -66,6 +66,47 @@ func (r *chatRepository) JoinChat(ctx context.Context, chatID, userID int) error
 		return fmt.Errorf("ошибка присоединения участника к чату: %w", err)
 	}
 	return nil
+}
+
+func (r *chatRepository) ForUser(ctx context.Context, userID int, isTeacher bool) ([]*domainChat.Chat, error) {
+	var (
+		rows *sql.Rows
+		err  error
+	)
+
+	if isTeacher {
+		rows, err = r.db.QueryContext(ctx, `
+            SELECT id, group_id, owner_id, subject_id, join_code, invite_link, created_at
+            FROM chats
+            WHERE owner_id = $1
+            ORDER BY created_at DESC
+        `, userID)
+	} else {
+		rows, err = r.db.QueryContext(ctx, `
+            SELECT c.id, c.group_id, c.owner_id, c.subject_id, c.join_code, c.invite_link, c.created_at
+            FROM chats c
+            JOIN student_chats sc ON sc.chat_id = c.id
+            WHERE sc.student_id = $1
+            ORDER BY c.created_at DESC
+        `, userID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("chatRepo.GetForUser: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*domainChat.Chat
+	for rows.Next() {
+		ch := new(domainChat.Chat)
+		if err := rows.Scan(
+			&ch.ID, &ch.GroupID, &ch.OwnerID, &ch.SubjectID,
+			&ch.JoinCode, &ch.InviteLink, &ch.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("chatRepo.GetForUser scan: %w", err)
+		}
+		out = append(out, ch)
+	}
+	return out, nil
 }
 
 func (r *chatRepository) UpdateChatInvite(ctx context.Context, chatID int, newJoinCode, newInviteLink string) error {

@@ -295,3 +295,17 @@ func (h *ChatHandler) LeaveChatHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Вы покинули чат"})
 }
+
+// ListChatsHandler отдаёт все чаты для текущего пользователя.
+// GET /chats
+func (h *ChatHandler) ListChatsHandler(c *gin.Context) {
+	userID := c.GetInt("user_id")
+	isTeacher := c.GetBool("is_teacher")
+
+	chats, err := h.chatService.ListForUser(c.Request.Context(), userID, isTeacher)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, chats)
+}

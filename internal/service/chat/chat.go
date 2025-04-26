@@ -41,6 +41,17 @@ func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domai
 	return chat, nil
 }
 
+func (s *chatService) ListForUser(ctx context.Context, userID int, isTeacher bool) ([]*domainChat.Chat, error) {
+	s.log.Infof("Получаем чаты для user=%d isTeacher=%v", userID, isTeacher)
+	chats, err := s.repo.ForUser(ctx, userID, isTeacher)
+	if err != nil {
+		s.log.Errorf("ChatService.ListForUser: %v", err)
+		return nil, fmt.Errorf("не удалось получить список чатов")
+	}
+	// TODO пересмотреть поля
+	return chats, nil
+}
+
 // ChatParticipants возвращает список участников чата.
 func (s *chatService) ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error) {
 	participants, err := s.repo.GetParticipants(ctx, chatID)
@@ -64,9 +75,9 @@ func (s *chatService) JoinChat(ctx context.Context, chatID, userID int) error {
 
 // RecreateInvite генерирует новый join_code и invite_link, если запрос делает владелец.
 func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID int) error {
-	// Проверить, что запрашивающий является владельцем чата (это можно проверить через GetChatByID)
+	// Проверить, что запрашивающий является владельцем чата (это можно проверить через ChatByID)
 	// TODO добавить возврат новой пригласительной ссылки
-	chat, err := s.repo.GetChatByID(ctx, chatID)
+	chat, err := s.repo.ChatByID(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("ошибка получения чата: %w", err)
 	}
@@ -85,7 +96,7 @@ func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID in
 
 // DeleteChat удаляет чат, если запрос отправлен владельцем.
 func (s *chatService) DeleteChat(ctx context.Context, chatID int, ownerID int) error {
-	chat, err := s.repo.GetChatByID(ctx, chatID)
+	chat, err := s.repo.ChatByID(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("ошибка получения чата: %w", err)
 	}
@@ -102,7 +113,7 @@ func (s *chatService) DeleteChat(ctx context.Context, chatID int, ownerID int) e
 
 // RemoveParticipant удаляет участника (только по запросу владельца).
 func (s *chatService) RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error {
-	chat, err := s.repo.GetChatByID(ctx, chatID)
+	chat, err := s.repo.ChatByID(ctx, chatID)
 	if err != nil {
 		return fmt.Errorf("ошибка получения чата: %w", err)
 	}

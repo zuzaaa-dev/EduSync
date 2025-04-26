@@ -65,6 +65,7 @@ func SetupRouter(
 			}
 
 			chatGroup := protected.Group("/chats")
+			chatGroup.GET("", chatHandler.ListChatsHandler)
 			chatGroup.POST("/:id/join", chatHandler.JoinChatHandler)
 			chatGroup.POST("", chatHandler.CreateChatHandler)
 			chatGroup.Use(middleware.ChatMembershipMiddleware(chatRepo))

@@ -92,7 +92,8 @@ type ScheduleRepository interface {
 // ChatRepository описывает операции для работы с чатами.
 type ChatRepository interface {
 	CreateChat(ctx context.Context, chat *domainChat.Chat) (*domainChat.Chat, error)
-	GetChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error)
+	ChatByID(ctx context.Context, chatID int) (*domainChat.Chat, error)
+	ForUser(ctx context.Context, userID int, isTeacher bool) ([]*domainChat.Chat, error)
 	DeleteChat(ctx context.Context, chatID int) error
 	UpdateChatInvite(ctx context.Context, chatID int, newJoinCode, newInviteLink string) error
 	// GetParticipants Метод для получения списка участников чата.
