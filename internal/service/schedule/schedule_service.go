@@ -156,8 +156,20 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		s.log.Errorf("Ошибка получения расписания: %v", err)
 		return nil, err
 	}
+
+	subs, err := s.subjectSvc.ByGroupID(ctx, groupID)
+	if err != nil {
+		s.log.Errorf("Ошибка получения предметов для группы %d: %v", groupID, err)
+		return nil, fmt.Errorf("не удалось получить предметы")
+	}
+	subjectMap := make(map[int]string, len(subs))
+	for _, sub := range subs {
+		subjectMap[sub.ID] = sub.Name
+	}
+
 	var out []*domainSchedule.Item
 	for _, e := range entries {
+		// вытаскиваем информацию по преподавателю/инициалам
 		var (
 			tid      *int
 			initials string
@@ -165,7 +177,7 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		if e.TeacherInitialsID != nil {
 			ti, err := s.teacherInitialsRepo.GetByID(ctx, *e.TeacherInitialsID)
 			if err != nil {
-				return nil, fmt.Errorf("initialsRepo.ByID: %w", err)
+				return nil, fmt.Errorf("initialsRepo.GetByID: %w", err)
 			}
 			if ti != nil {
 				tid = ti.TeacherID
@@ -173,10 +185,12 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 			}
 		}
 
+		subjName := subjectMap[e.SubjectID]
+
 		out = append(out, &domainSchedule.Item{
 			ID:              e.ID,
 			GroupID:         e.GroupID,
-			SubjectID:       e.SubjectID,
+			Subject:         subjName,
 			Date:            e.Date,
 			PairNumber:      e.PairNumber,
 			Classroom:       e.Classroom,
@@ -186,6 +200,70 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 			EndTime:         e.EndTime,
 		})
 	}
+	return out, nil
+}
+
+func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Item, error) {
+	entries, err := s.repo.ByTeacherInitialsID(ctx, initialsID)
+	if err != nil {
+		s.log.Errorf("Ошибка получения расписания по initials_id=%d: %v", initialsID, err)
+		return nil, fmt.Errorf("не удалось получить расписание")
+	}
+
+	// 2. Предварительно подгружаем все нужные предметы
+	//    Соберём уникальные subject_id из entries
+	subjectIDs := make(map[int]struct{}, len(entries))
+	for _, e := range entries {
+		subjectIDs[e.SubjectID] = struct{}{}
+	}
+	//    Получим их по одному (или, если SubjectService умеет получать сразу по слайсу — так лучше)
+	subjMap := make(map[int]string, len(subjectIDs))
+	for id := range subjectIDs {
+		sub, err := s.subjectSvc.ByID(ctx, id)
+		if err != nil {
+			s.log.Errorf("Ошибка получения предмета %d: %v", id, err)
+			continue
+		}
+		if sub != nil {
+			subjMap[id] = sub.Name
+		}
+	}
+
+	// 3. Собираем DTO
+	var out []*domainSchedule.Item
+	for _, e := range entries {
+		// a) имя предмета
+		subjectName := subjMap[e.SubjectID]
+
+		// b) инициалы и, возможно, id преподавателя
+		var (
+			teacherID   *int
+			initialsStr string
+		)
+		if e.TeacherInitialsID != nil {
+			ti, err := s.teacherInitialsRepo.GetByID(ctx, *e.TeacherInitialsID)
+			if err != nil {
+				s.log.Errorf("initialsRepo.GetByID(%d): %v", *e.TeacherInitialsID, err)
+			} else if ti != nil {
+				initialsStr = ti.Initials
+				teacherID = ti.TeacherID
+			}
+		}
+
+		out = append(out, &domainSchedule.Item{
+			ID:              e.ID,
+			GroupID:         e.GroupID,
+			Subject:         subjectName,
+			Date:            e.Date,
+			PairNumber:      e.PairNumber,
+			Classroom:       e.Classroom,
+			TeacherID:       teacherID,
+			TeacherInitials: initialsStr,
+			StartTime:       e.StartTime,
+			EndTime:         e.EndTime,
+		})
+	}
+
 	return out, nil
 }
 
@@ -264,15 +342,6 @@ func (s *scheduleService) Delete(ctx context.Context, id int) error {
 
 func (s *scheduleService) ByID(ctx context.Context, id int) (*domainSchedule.Schedule, error) {
 	return s.repo.GetByID(ctx, id)
-}
-
-func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error) {
-	entries, err := s.repo.ByTeacherInitialsID(ctx, initialsID)
-	if err != nil {
-		s.log.Errorf("Ошибка получения расписания по initials_id=%d: %v", initialsID, err)
-		return nil, fmt.Errorf("не удалось получить расписание")
-	}
-	return entries, nil
 }
 
 // StartWorker запускает периодическое обновление расписания и инициалов.

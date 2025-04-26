@@ -61,7 +61,7 @@ type ScheduleService interface {
 	Save(ctx context.Context, groupName string) error
 	Create(ctx context.Context, req *dtoSchedule.CreateScheduleReq) (int, error)
 	ByGroupID(ctx context.Context, groupID int) ([]*deliverSchedule.Item, error)
-	ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Schedule, error)
+	ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*deliverSchedule.Item, error)
 	ByID(ctx context.Context, id int) (*domainSchedule.Schedule, error)
 	Update(ctx context.Context, id int, req *dtoSchedule.UpdateScheduleReq) error
 	Delete(ctx context.Context, id int) error
