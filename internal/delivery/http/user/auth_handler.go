@@ -1,6 +1,7 @@
 package user
 
 import (
+	domainUser "EduSync/internal/domain/user"
 	"EduSync/internal/service"
 	"net/http"
 	"strings"
@@ -145,6 +146,54 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, PairTokenResp{
 		AccessToken:  "Bearer " + accessToken,
 		RefreshToken: "Bearer " + newRefreshToken,
+	})
+}
+
+// UpdateProfileHandler
+// @Summary Обновить профиль
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param input body UpdateProfileReq true "Новые поля профиля"
+// @Success 200 {object} PairTokenResp
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 403 {object} dto.ErrorResponse
+// @Failure 500 {object} dto.ErrorResponse
+// @Router /api/profile [put]
+func (h *AuthHandler) UpdateProfileHandler(c *gin.Context) {
+	uid := c.GetInt("user_id")
+	isTeacher := c.GetBool("is_teacher")
+
+	var req UpdateProfileReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
+		return
+	}
+
+	userAgent := c.Request.UserAgent()
+	ipAddress := c.ClientIP()
+
+	accessToken, refreshToken, err := h.authService.UpdateProfile(
+		c.Request.Context(),
+		domainUser.UpdateUser{
+			ID:            uid,
+			IsTeacher:     isTeacher,
+			FullName:      req.FullName,
+			InstitutionID: req.InstitutionID,
+			GroupID:       req.GroupID,
+		},
+		userAgent,
+		ipAddress,
+	)
+	if err != nil {
+		// можно различать тип ошибки, но для простоты:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, PairTokenResp{
+		AccessToken:  "Bearer " + accessToken,
+		RefreshToken: "Bearer " + refreshToken,
 	})
 }
 

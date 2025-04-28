@@ -64,3 +64,10 @@ func (r *userRepository) ByID(ctx context.Context, ID int) (*domainUser.User, er
 	}
 	return user, err
 }
+func (r *userRepository) Update(ctx context.Context, tx *sql.Tx, user *domainUser.User) error {
+	_, err := tx.ExecContext(ctx,
+		`UPDATE users SET full_name = $1 WHERE id = $2`,
+		user.FullName, user.ID,
+	)
+	return err
+}

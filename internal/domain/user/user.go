@@ -35,6 +35,15 @@ func (c *CreateUser) EmailMask() (string, error) {
 	return parts[1], nil
 }
 
+// UpdateUser содержит поля, которые хотим обновить.
+type UpdateUser struct {
+	ID            int
+	FullName      *string
+	InstitutionID *int
+	GroupID       *int // nil для преподавателей
+	IsTeacher     bool
+}
+
 type Student struct {
 	UserID        int
 	InstitutionID int

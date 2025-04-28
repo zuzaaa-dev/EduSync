@@ -46,6 +46,7 @@ func SetupRouter(
 		protected := api.Group("/")
 		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager, log))
 		{
+			protected.PUT("/profile", authHandler.UpdateProfileHandler)
 			protected.POST("/logout", authHandler.LogoutHandler)
 			protected.GET("/profile", authHandler.ProfileHandler)
 			schedule := protected.Group("/schedule")

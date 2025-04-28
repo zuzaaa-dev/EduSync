@@ -18,6 +18,7 @@ type UserRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, user *domainUser.User) (int, error)
 	ByEmail(ctx context.Context, email string) (*domainUser.User, error)
 	ByID(ctx context.Context, id int) (*domainUser.User, error)
+	Update(ctx context.Context, tx *sql.Tx, user *domainUser.User) error
 }
 
 // StudentRepository описывает контракт для работы со студентами.
@@ -25,6 +26,7 @@ type StudentRepository interface {
 	Create(ctx context.Context, tx *sql.Tx, userID, institutionID, groupID int) error
 	ByUserID(ctx context.Context, userID int) (*domainUser.Student, error)
 	ByGroupID(ctx context.Context, groupID int) ([]*domainUser.Student, error)
+	Update(ctx context.Context, tx *sql.Tx, userID, institutionID, groupID int) error
 }
 
 // TeacherRepository описывает контракт для работы с преподавателями.
@@ -33,6 +35,7 @@ type TeacherRepository interface {
 	ByUserID(ctx context.Context, userID int) (*domainUser.Teacher, error)
 	ByInstitutionID(ctx context.Context, institutionID int) ([]*domainUser.Teacher, error)
 	BySurname(ctx context.Context, surname string) ([]*domainUser.User, error)
+	Update(ctx context.Context, tx *sql.Tx, userID, institutionID int) error
 }
 
 // TeacherInitialsRepository описывает работу с таблицей teacher_initials.

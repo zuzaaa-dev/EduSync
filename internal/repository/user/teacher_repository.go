@@ -101,3 +101,11 @@ func (r *teacherRepository) BySurname(ctx context.Context, surname string) ([]*d
 
 	return teachers, nil
 }
+
+func (r *teacherRepository) Update(ctx context.Context, tx *sql.Tx, userID, institutionID int) error {
+	_, err := tx.ExecContext(ctx,
+		`UPDATE teachers SET institution_id = $1 WHERE user_id = $2`,
+		institutionID, userID,
+	)
+	return err
+}

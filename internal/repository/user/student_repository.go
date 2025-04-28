@@ -74,3 +74,11 @@ func (r *studentRepository) ByGroupID(ctx context.Context, groupID int) ([]*doma
 	}
 	return students, nil
 }
+
+func (r *studentRepository) Update(ctx context.Context, tx *sql.Tx, userID, institutionID, groupID int) error {
+	_, err := tx.ExecContext(ctx,
+		`UPDATE students SET institution_id = $1, group_id = $2 WHERE user_id = $3`,
+		institutionID, groupID, userID,
+	)
+	return err
+}

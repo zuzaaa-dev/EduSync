@@ -81,6 +81,7 @@ type PairTokenResp struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// swagger:model
 type ProfileResp struct {
 	// ID пользователя
 	// required: true
@@ -99,4 +100,12 @@ type ProfileResp struct {
 	// Является ли пользователь учителем
 	// required: true
 	IsTeacher bool `json:"is_teacher" binding:"required" example:"false"`
+}
+
+// UpdateProfileReq — payload для обновления профиля.
+// swagger:model
+type UpdateProfileReq struct {
+	FullName      *string `json:"full_name,omitempty"`
+	InstitutionID *int    `json:"institution_id,omitempty"`
+	GroupID       *int    `json:"group_id,omitempty"`
 }

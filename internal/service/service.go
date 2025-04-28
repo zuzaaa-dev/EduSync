@@ -20,6 +20,7 @@ import (
 type UserService interface {
 	Register(ctx context.Context, user domainUser.CreateUser) (int, error)
 	Login(ctx context.Context, email, password, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
+	UpdateProfile(ctx context.Context, u domainUser.UpdateUser, userAgent string, ipAddress string) (string, string, error)
 	Logout(ctx context.Context, accessToken string) error
 	RefreshToken(ctx context.Context, inputRefreshToken, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
 	FindTeacherByName(ctx context.Context, teacher string) (*domainUser.User, error)

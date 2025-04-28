@@ -192,6 +192,128 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 	return accessToken, refreshToken, nil
 }
 
+func (s *AuthService) UpdateProfile(ctx context.Context, u domainUser.UpdateUser, userAgent string, ipAddress string) (string, string, error) {
+	// 1) начинаем tx
+	tx, err := s.userRepo.BeginTx(ctx)
+	if err != nil {
+		s.log.Errorf("BeginTx: %v", err)
+		return "", "", fmt.Errorf("не удалось начать транзакцию")
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 2) проверяем, что пользователь существует
+	existing, err := s.userRepo.ByID(ctx, u.ID)
+	if err != nil {
+		return "", "", err
+	}
+	if existing == nil {
+		return "", "", fmt.Errorf("пользователь не найден")
+	}
+
+	// 3) обновляем таблицу users
+	updateUser := &domainUser.User{
+		ID:       u.ID,
+		FullName: existing.FullName,
+	}
+	if u.FullName != nil {
+		updateUser.FullName = *u.FullName
+	}
+	if err = s.userRepo.Update(ctx, tx, updateUser); err != nil {
+		s.log.Errorf("userRepo.Update: %v", err)
+		return "", "", fmt.Errorf("не удалось обновить пользователя")
+	}
+
+	// 4) обновляем students/teachers
+	if existing.IsTeacher {
+		if u.InstitutionID != nil {
+			if err = s.teacherRepo.Update(ctx, tx, u.ID, *u.InstitutionID); err != nil {
+				s.log.Errorf("teacherRepo.Update: %v", err)
+				return "", "", fmt.Errorf("не удалось обновить данные преподавателя")
+			}
+		}
+	} else {
+		// студент
+		stu, err2 := s.studentRepo.ByUserID(ctx, u.ID)
+		if err2 != nil {
+			return "", "", err2
+		}
+		instID := stu.InstitutionID
+		grpID := stu.GroupID
+		if u.InstitutionID != nil {
+			instID = *u.InstitutionID
+		}
+		if u.GroupID != nil {
+			grpID = *u.GroupID
+		}
+		if err = s.studentRepo.Update(ctx, tx, u.ID, instID, grpID); err != nil {
+			s.log.Errorf("studentRepo.Update: %v", err)
+			return "", "", fmt.Errorf("не удалось обновить данные студента")
+		}
+	}
+
+	// 5) фиксим транзакцию
+	if err = tx.Commit(); err != nil {
+		s.log.Errorf("tx.Commit: %v", err)
+		return "", "", fmt.Errorf("не удалось сохранить изменения")
+	}
+
+	// 6) достаём всё для новой пачки claim’ов
+	user, err2 := s.userRepo.ByID(ctx, u.ID)
+	if err2 != nil {
+		return "", "", err2
+	}
+	var institutionID, groupID int
+	if user.IsTeacher {
+		t, _ := s.teacherRepo.ByUserID(ctx, u.ID)
+		institutionID = t.InstitutionID
+	} else {
+		st, _ := s.studentRepo.ByUserID(ctx, u.ID)
+		institutionID = st.InstitutionID
+		groupID = st.GroupID
+	}
+
+	// 7) генерим новые токены
+	newAccess, err := s.jwtManager.GenerateJWT(
+		user.ID,
+		user.IsTeacher,
+		user.Email,
+		user.FullName,
+		institutionID,
+		groupID,
+		time.Hour,
+	)
+	if err != nil {
+		s.log.Errorf("GenerateTokens: %v", err)
+		return "", "", fmt.Errorf("не удалось обновить токен")
+	}
+	newRefresh, err := s.jwtManager.GenerateJWT(
+		user.ID,
+		user.IsTeacher,
+		user.Email,
+		user.FullName,
+		institutionID,
+		groupID,
+		24*time.Hour,
+	)
+
+	// 8) чистим старые и сохраняем новые в БД
+	if err = s.tokenRepo.DeleteForUser(ctx, user.ID); err != nil {
+		s.log.Errorf("tokenRepo.DeleteForUser: %v", err)
+		return "", "", err
+	}
+	expiresAt := time.Now().Add(7 * 24 * time.Hour)
+	if err = s.tokenRepo.Save(ctx, user.ID, newAccess, newRefresh, userAgent, ipAddress, expiresAt); err != nil {
+		s.log.Errorf("tokenRepo.Save: %v", err)
+		return "", "", err
+	}
+
+	return newAccess, newRefresh, nil
+}
+
 // Logout отзываёт токен: удаляет токен из БД.
 func (s *AuthService) Logout(ctx context.Context, accessToken string) error {
 	return s.tokenRepo.Revoke(ctx, accessToken)
