@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"sort"
 	"strings"
 	"time"
 )
@@ -48,99 +49,115 @@ func NewScheduleService(
 	}
 }
 
-// Save получает расписание с сайта, выполняет проверки и сохраняет его в БД.
 func (s *scheduleService) Save(ctx context.Context, groupName string) error {
-	s.log.Infof("Обновление расписания для группы: %s (id: %d)", groupName)
+	s.log.Infof("Сохраняем расписание для группы %q", groupName)
 
-	// Получаем расписание с помощью парсера
-	parsedEntries, err := s.parserSchedule.FetchSchedule(ctx, groupName)
+	// 1) Парсим сырое расписание
+	parsed, err := s.parserSchedule.FetchSchedule(ctx, groupName)
 	if err != nil {
-		s.log.Errorf("ошибка парсинга расписания: %v", err)
-		return fmt.Errorf("ошибка парсинга расписания")
+		s.log.Errorf("парсер вернул ошибку: %v", err)
+		return fmt.Errorf("не удалось распарсить расписание")
 	}
 
+	// 2) Получаем ID группы и института
 	group, err := s.groupRepo.ByName(ctx, groupName)
 	if err != nil {
-		s.log.Errorf("ошибка получения id группы: %v", err)
-		return fmt.Errorf("ошибка получения группы")
+		s.log.Errorf("ошибка поиска группы %q: %v", groupName, err)
+		return fmt.Errorf("группа не найдена")
 	}
+
+	instID := group.InstitutionID
 	groupID := group.ID
-	dateCounters := make(map[time.Time]int, 7)
-	var entries []*domainSchedule.Schedule
-	for _, pe := range parsedEntries {
-		// Если для этой даты еще нет счетчика, начинаем с 1
-		dateCounters[pe.Date]++
-		pairNumber := dateCounters[pe.Date]
-		// Преобразование даты и времени из строк в time.Time
-		// Предполагаем, что формат даты "02.01.2006" и времени "15:04"
-		startTime, err := time.Parse("15:04", pe.StartTime)
-		if err != nil {
-			s.log.Errorf("ошибка парсинга startTime (%s): %v", pe.StartTime, err)
-			continue
-		}
-		endTime, err := time.Parse("15:04", pe.EndTime)
-		if err != nil {
-			s.log.Errorf("ошибка парсинга endTime (%s): %v", pe.EndTime, err)
-			continue
-		}
 
-		// Проверяем предмет: если не существует, добавляем его через subjectSvc
-		subj, err := s.subjectSvc.ByNameAndInstitution(ctx, pe.Discipline, s.parserSchedule.InstitutionID)
+	// 3) Для каждой записи раскладываем Start/End в time.Time и собираем по дате
+	type raw struct {
+		pe    schedule.ScheduleEntry // ваша внутренняя модель parser.FetchSchedule
+		start time.Time
+		end   time.Time
+	}
+
+	byDate := make(map[time.Time][]raw)
+	for _, pe := range parsed {
+		st, err := time.Parse("15:04", pe.StartTime)
 		if err != nil {
-			s.log.Errorf("ошибка поиска предмета: %v", err)
+			s.log.Warnf("некоректное время пары %q: %v", pe.StartTime, err)
 			continue
 		}
-		if subj == nil {
-			subjID, err := s.subjectSvc.Create(ctx, pe.Discipline, s.parserSchedule.InstitutionID)
+		en, err := time.Parse("15:04", pe.EndTime)
+		if err != nil {
+			s.log.Warnf("некоректное время конца пары %q: %v", pe.EndTime, err)
+			continue
+		}
+		// обнуляем час/минута/секунды даты — чтобы ключом была ровно дата
+		d := pe.Date.Truncate(24 * time.Hour)
+		byDate[d] = append(byDate[d], raw{pe: pe, start: st, end: en})
+	}
+
+	// 4) Собираем финальный слайс domainSchedule.Schedule с правильно пронумерованными парами
+	var toSave []*domainSchedule.Schedule
+	for d, raws := range byDate {
+		// сортируем по start asc
+		sort.Slice(raws, func(i, j int) bool {
+			return raws[i].start.Before(raws[j].start)
+		})
+
+		for idx, r := range raws {
+			// idx==0 => pairNumber=1, и т.д.
+			pairNum := idx + 1
+
+			// subject: ищем или создаём
+			subj, err := s.subjectSvc.ByNameAndInstitution(ctx, r.pe.Discipline, instID)
 			if err != nil {
-				s.log.Errorf("ошибка создания предмета: %v", err)
+				s.log.Errorf("subjectSvc.ByName %q: %v", r.pe.Discipline, err)
 				continue
 			}
-			// Получаем предмет после создания
-			subj, err = s.subjectSvc.ByID(ctx, subjID)
-			if err != nil {
-				s.log.Errorf("ошибка получения предмета: %v", err)
-				continue
-			}
-		}
-
-		// Проверяем преподавателя: если в расписании указано ФИО, ищем преподавателя по ФИО.
-		var teacherID int
-		teacherInitials := pe.Teacher
-		// Попытаемся найти преподавателя, если имя не пустое и не равно "-"
-		if pe.Teacher != "" && pe.Teacher != "-" {
-			t, err := s.userSvc.FindTeacherByName(ctx, pe.Teacher)
-			if err != nil {
-				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, nil, group.InstitutionID)
+			if subj == nil {
+				id, err := s.subjectSvc.Create(ctx, r.pe.Discipline, instID)
 				if err != nil {
-					s.log.Errorf("ошибка поиска преподавателя: %v", err)
+					s.log.Errorf("subjectSvc.Create %q: %v", r.pe.Discipline, err)
+					continue
 				}
-			} else if t != nil {
-				teacherID, err = s.teacherInitialsRepo.Upsert(ctx, teacherInitials, &t.ID, group.InstitutionID)
+				subj, _ = s.subjectSvc.ByID(ctx, id)
 			}
-		}
 
-		entry := &domainSchedule.Schedule{
-			GroupID:           groupID,
-			SubjectID:         subj.ID,
-			Date:              pe.Date,
-			PairNumber:        pairNumber,
-			Classroom:         pe.Classroom,
-			TeacherInitialsID: &teacherID,
-			StartTime:         combineTime(pe.Date, startTime),
-			EndTime:           combineTime(pe.Date, endTime),
-		}
+			// teacher_initials upsert
+			var tiID *int
+			initials := r.pe.Teacher
+			if initials != "" && initials != "-" {
+				// если нашли реального учителя
+				usr, err := s.userSvc.FindTeacherByName(ctx, initials)
+				var teacherPtr *int
+				if err == nil && usr != nil {
+					teacherPtr = &usr.ID
+				}
+				id, err := s.teacherInitialsRepo.Upsert(ctx, initials, teacherPtr, instID)
+				if err != nil {
+					s.log.Errorf("teacherInitialsRepo.Upsert %q: %v", initials, err)
+				} else {
+					tiID = &id
+				}
+			}
 
-		entries = append(entries, entry)
+			toSave = append(toSave, &domainSchedule.Schedule{
+				GroupID:           groupID,
+				SubjectID:         subj.ID,
+				Date:              d,
+				PairNumber:        pairNum,
+				Classroom:         r.pe.Classroom,
+				TeacherInitialsID: tiID,
+				StartTime:         combineTime(d, r.start),
+				EndTime:           combineTime(d, r.end),
+			})
+		}
 	}
 
-	// Сохраняем расписание в БД
-	err = s.repo.Save(ctx, entries)
-	if err != nil {
-		s.log.Errorf("ошибка сохранения расписания: %v", err)
-		return fmt.Errorf("ошибка сохранения расписания")
+	// 5) Сохраняем всё пачкой
+	if err := s.repo.Save(ctx, toSave); err != nil {
+		s.log.Errorf("repo.Save: %v", err)
+		return fmt.Errorf("не удалось сохранить расписание")
 	}
 
+	s.log.Infof("успешно сохранено %d записей", len(toSave))
 	return nil
 }
 
@@ -210,13 +227,11 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		return nil, fmt.Errorf("не удалось получить расписание")
 	}
 
-	// 2. Предварительно подгружаем все нужные предметы
-	//    Соберём уникальные subject_id из entries
 	subjectIDs := make(map[int]struct{}, len(entries))
 	for _, e := range entries {
 		subjectIDs[e.SubjectID] = struct{}{}
 	}
-	//    Получим их по одному (или, если SubjectService умеет получать сразу по слайсу — так лучше)
+
 	subjMap := make(map[int]string, len(subjectIDs))
 	for id := range subjectIDs {
 		sub, err := s.subjectSvc.ByID(ctx, id)
@@ -229,13 +244,10 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		}
 	}
 
-	// 3. Собираем DTO
 	var out []*domainSchedule.Item
 	for _, e := range entries {
-		// a) имя предмета
 		subjectName := subjMap[e.SubjectID]
 
-		// b) инициалы и, возможно, id преподавателя
 		var (
 			teacherID   *int
 			initialsStr string

@@ -38,8 +38,10 @@ func (r *PostgresScheduleRepository) Save(ctx context.Context, entries []*domain
 
 	var teacherInitID *int
 	for _, entry := range entries {
-		if *entry.TeacherInitialsID != 0 {
-			teacherInitID = entry.TeacherInitialsID
+		if entry.TeacherInitialsID != nil {
+			if *entry.TeacherInitialsID != 0 {
+				teacherInitID = entry.TeacherInitialsID
+			}
 		} else {
 			teacherInitID = nil
 		}
