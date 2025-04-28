@@ -110,7 +110,7 @@ func main() {
 		logger,
 	)
 
-	chatSvc := chat2.NewChatService(chatRepo, logger)
+	chatSvc := chat2.NewChatService(chatRepo, subjectRepo, userRepo, logger)
 	messageSvc := chat2.NewMessageService(messageRepo, logger)
 
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)

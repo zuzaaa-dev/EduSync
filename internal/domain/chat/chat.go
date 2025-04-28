@@ -1,6 +1,9 @@
 package chat
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Chat модель чата
 // swagger:model
@@ -49,3 +52,6 @@ type Participant struct {
 	// example: false
 	IsTeacher bool `json:"is_teacher"`
 }
+
+// ErrInvalidJoinCode возвращается, если код/ссылка не совпала
+var ErrInvalidJoinCode = errors.New("неверный код приглашения или ссылка")

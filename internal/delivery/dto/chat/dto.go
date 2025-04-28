@@ -29,26 +29,23 @@ type ChatInfo struct {
 	// example: 10
 	OwnerID int `json:"owner_id"`
 
+	// Полное имя владельца чата
+	// example: Фамилия Имя Отчество
+	OwnerFullName string `json:"owner_full_name"`
+
 	// ID предмета
 	// example: 3
 	SubjectID int `json:"subject_id"`
 
-	// Код присоединения
-	// example: ABC123
-	JoinCode string `json:"join_code"`
-
-	// Ссылка-приглашение
-	// example: https://edusync.com/join/ABC123
-	InviteLink string `json:"invite_link"`
+	// Название предмета
+	// example: УП
+	SubjectName string `json:"subject_name"`
 }
 
 func ConvertChatToDTO(chat *domainChat.Chat) *ChatInfo {
 	return &ChatInfo{
-		ID:         chat.ID,
-		GroupID:    chat.GroupID,
-		OwnerID:    chat.OwnerID,
-		SubjectID:  chat.SubjectID,
-		JoinCode:   chat.JoinCode,
-		InviteLink: chat.InviteLink,
+		ID:      chat.ID,
+		GroupID: chat.GroupID,
+		OwnerID: chat.OwnerID,
 	}
 }

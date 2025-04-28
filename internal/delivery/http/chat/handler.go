@@ -94,12 +94,15 @@ func (h *ChatHandler) UpdateInviteHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Неизвестный владелец"})
 		return
 	}
-	err = h.chatService.RecreateInvite(c.Request.Context(), chatID, ownerID.(int))
+	chat, err := h.chatService.RecreateInvite(c.Request.Context(), chatID, ownerID.(int))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось обновить приглашение"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Приглашение обновлено"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Приглашение обновлено",
+		"chat":    chat,
+	})
 }
 
 // JoinChatHandler присоединиться к чату
@@ -139,12 +142,21 @@ func (h *ChatHandler) JoinChatHandler(c *gin.Context) {
 		return
 	}
 
-	err = h.chatService.JoinChat(c.Request.Context(), chatID, userID.(int))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось присоединиться к чату"})
+	var body struct {
+		Code string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Требуется поле code"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Вы успешно присоединились к чату"})
+
+	chatInfo, err := h.chatService.JoinChat(c.Request.Context(), chatID, userID.(int), body.Code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Вы успешно присоединились к чату",
+		"chat_info": chatInfo})
 }
 
 // DeleteChatHandler удаляет чат

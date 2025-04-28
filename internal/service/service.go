@@ -1,6 +1,7 @@
 package service
 
 import (
+	dtoChat "EduSync/internal/delivery/dto/chat"
 	dtoSchedule "EduSync/internal/delivery/http/schedule/dto"
 	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
@@ -71,10 +72,10 @@ type ScheduleService interface {
 
 type ChatService interface {
 	CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error)
-	ListForUser(ctx context.Context, userID int, isTeacher bool) ([]*domainChat.Chat, error)
-	RecreateInvite(ctx context.Context, chatID int, ownerID int) error
+	ListForUser(ctx context.Context, userID int, isTeacher bool) ([]*dtoChat.ChatInfo, error)
+	RecreateInvite(ctx context.Context, chatID int, ownerID int) (*domainChat.Chat, error)
 	ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
-	JoinChat(ctx context.Context, chatID, userID int) error
+	JoinChat(ctx context.Context, chatID, userID int, codeOrLink string) (*dtoChat.ChatInfo, error)
 	DeleteChat(ctx context.Context, chatID int, ownerID int) error
 	RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error

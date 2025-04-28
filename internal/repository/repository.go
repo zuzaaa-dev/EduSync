@@ -17,6 +17,7 @@ type UserRepository interface {
 	BeginTx(ctx context.Context) (*sql.Tx, error)
 	Create(ctx context.Context, tx *sql.Tx, user *domainUser.User) (int, error)
 	ByEmail(ctx context.Context, email string) (*domainUser.User, error)
+	ByID(ctx context.Context, id int) (*domainUser.User, error)
 }
 
 // StudentRepository описывает контракт для работы со студентами.
