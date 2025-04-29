@@ -151,6 +151,7 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 
 // UpdateProfileHandler
 // @Summary Обновить профиль
+// @Tags         Auth
 // @Security BearerAuth
 // @Accept json
 // @Produce json
@@ -159,7 +160,7 @@ func (h *AuthHandler) RefreshTokenHandler(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 403 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Router /api/profile [put]
+// @Router /profile [put]
 func (h *AuthHandler) UpdateProfileHandler(c *gin.Context) {
 	uid := c.GetInt("user_id")
 	isTeacher := c.GetBool("is_teacher")

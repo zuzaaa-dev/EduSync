@@ -71,7 +71,7 @@ func (s *scheduleService) Save(ctx context.Context, groupName string) error {
 
 	// 3) Для каждой записи раскладываем Start/End в time.Time и собираем по дате
 	type raw struct {
-		pe    schedule.ScheduleEntry // ваша внутренняя модель parser.FetchSchedule
+		pe    schedule.ScheduleEntry
 		start time.Time
 		end   time.Time
 	}
@@ -168,12 +168,25 @@ func combineTime(date, t time.Time) time.Time {
 
 // ByGroupID возвращает расписание для заданной группы.
 func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domainSchedule.Item, error) {
+	// 1) Забираем все записи расписания
 	entries, err := s.repo.ByGroupID(ctx, groupID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения расписания: %v", err)
 		return nil, err
 	}
 
+	// 2) Получаем name группы один раз
+	grp, err := s.groupRepo.ById(ctx, groupID)
+	if err != nil {
+		s.log.Errorf("Ошибка получения группы %d: %v", groupID, err)
+		return nil, fmt.Errorf("не удалось получить данные группы")
+	}
+	groupName := ""
+	if grp != nil {
+		groupName = grp.Name
+	}
+
+	// 3) Карта предметов, как было у вас
 	subs, err := s.subjectSvc.ByGroupID(ctx, groupID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения предметов для группы %d: %v", groupID, err)
@@ -184,9 +197,9 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		subjectMap[sub.ID] = sub.Name
 	}
 
+	// 4) Собираем DTO
 	var out []*domainSchedule.Item
 	for _, e := range entries {
-		// вытаскиваем информацию по преподавателю/инициалам
 		var (
 			tid      *int
 			initials string
@@ -207,6 +220,7 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		out = append(out, &domainSchedule.Item{
 			ID:              e.ID,
 			GroupID:         e.GroupID,
+			GroupName:       groupName, // ← вот добавили
 			Subject:         subjName,
 			Date:            e.Date,
 			PairNumber:      e.PairNumber,
@@ -220,18 +234,24 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 	return out, nil
 }
 
+// ByTeacherInitialsID возвращает расписание по initials_id (для разных групп).
 func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Item, error) {
+	// 1) Забираем все записи по initialsID
 	entries, err := s.repo.ByTeacherInitialsID(ctx, initialsID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения расписания по initials_id=%d: %v", initialsID, err)
 		return nil, fmt.Errorf("не удалось получить расписание")
 	}
 
+	// 2) Собираем уникальные subject_id и group_id
 	subjectIDs := make(map[int]struct{}, len(entries))
+	groupIDs := make(map[int]struct{}, len(entries))
 	for _, e := range entries {
 		subjectIDs[e.SubjectID] = struct{}{}
+		groupIDs[e.GroupID] = struct{}{}
 	}
 
+	// 3) Получаем названия предметов
 	subjMap := make(map[int]string, len(subjectIDs))
 	for id := range subjectIDs {
 		sub, err := s.subjectSvc.ByID(ctx, id)
@@ -244,12 +264,26 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		}
 	}
 
+	// 4) Получаем названия групп
+	groupMap := make(map[int]string, len(groupIDs))
+	for gid := range groupIDs {
+		grp, err := s.groupRepo.ById(ctx, gid)
+		if err != nil {
+			s.log.Errorf("Ошибка получения группы %d: %v", gid, err)
+			continue
+		}
+		if grp != nil {
+			groupMap[gid] = grp.Name
+		}
+	}
+
+	// 5) Собираем DTO
 	var out []*domainSchedule.Item
 	for _, e := range entries {
-		subjectName := subjMap[e.SubjectID]
+		subjName := subjMap[e.SubjectID]
 
 		var (
-			teacherID   *int
+			tid         *int
 			initialsStr string
 		)
 		if e.TeacherInitialsID != nil {
@@ -258,18 +292,19 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 				s.log.Errorf("initialsRepo.GetByID(%d): %v", *e.TeacherInitialsID, err)
 			} else if ti != nil {
 				initialsStr = ti.Initials
-				teacherID = ti.TeacherID
+				tid = ti.TeacherID
 			}
 		}
 
 		out = append(out, &domainSchedule.Item{
 			ID:              e.ID,
 			GroupID:         e.GroupID,
-			Subject:         subjectName,
+			GroupName:       groupMap[e.GroupID], // ← и здесь
+			Subject:         subjName,
 			Date:            e.Date,
 			PairNumber:      e.PairNumber,
 			Classroom:       e.Classroom,
-			TeacherID:       teacherID,
+			TeacherID:       tid,
 			TeacherInitials: initialsStr,
 			StartTime:       e.StartTime,
 			EndTime:         e.EndTime,
