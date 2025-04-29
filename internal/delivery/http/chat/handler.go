@@ -34,8 +34,8 @@ func NewChatHandler(chatService service.ChatService) *ChatHandler {
 // @Failure      500  {object} dto.ErrorResponse
 // @Router       /chats [post]
 func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
-	var req = chatDTO.CreateChatRequest
-	if err := c.ShouldBindJSON(&chatDTO.CreateChatRequest); err != nil {
+	var req chatDTO.CreateChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный формат запроса"})
 		return
 	}
