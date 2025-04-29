@@ -284,7 +284,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, u domainUser.UpdateUser
 		user.FullName,
 		institutionID,
 		groupID,
-		time.Hour,
+		24*time.Hour,
 	)
 	if err != nil {
 		s.log.Errorf("GenerateTokens: %v", err)
@@ -297,7 +297,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, u domainUser.UpdateUser
 		user.FullName,
 		institutionID,
 		groupID,
-		24*time.Hour,
+		7*24*time.Hour,
 	)
 
 	// 8) чистим старые и сохраняем новые в БД

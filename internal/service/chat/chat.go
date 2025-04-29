@@ -36,7 +36,7 @@ func NewChatService(
 }
 
 // CreateChat создает чат и генерирует приглашения.
-func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error) {
+func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*dtoChat.ChatInfo, error) {
 	// Проверка, что владелец - учитель, и другие бизнес-правила можно добавить здесь.
 	// Генерация join_code и invite_link:
 	c.JoinCode = generateRandomCode(10)
@@ -48,7 +48,12 @@ func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domai
 		return nil, fmt.Errorf("не удалось создать чат")
 	}
 	s.log.Infof("Чат создан с ID: %d", chat.ID)
-	return chat, nil
+
+	info, err := s.buildChatInfo(ctx, chat)
+	if err != nil {
+		s.log.Errorf("Ошибка получении инофрмации: %v", err)
+	}
+	return info, nil
 }
 
 // ListForUser возвращает все чаты, в которых участвует userID или которые он создал.

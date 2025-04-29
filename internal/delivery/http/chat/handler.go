@@ -58,7 +58,7 @@ func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, gin.H{
 		"message":   "Чат создан",
-		"chat_info": chatDTO.ConvertChatToDTO(chatInfo),
+		"chat_info": chatInfo,
 	})
 }
 
