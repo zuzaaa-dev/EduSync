@@ -136,3 +136,20 @@ type FileFavoriteRepository interface {
 	Exists(ctx context.Context, userID, fileID int) (bool, error)
 	ListByUser(ctx context.Context, userID int) ([]int, error)
 }
+
+// PollRepository описывает доступ к таблицам polls, poll_options, votes.
+type PollRepository interface {
+	CreatePoll(ctx context.Context, p *domainChat.Poll) (int, error)
+	DeletePoll(ctx context.Context, pollID int) error
+	CreateOption(ctx context.Context, opt *domainChat.Option) (int, error)
+	ListOptions(ctx context.Context, pollID int) ([]*domainChat.Option, error)
+
+	AddVote(ctx context.Context, v *domainChat.Vote) error
+	RemoveVote(ctx context.Context, userID, optionID int) error
+	CountVotes(ctx context.Context, optionID int) (int, error)
+
+	GetPollByID(ctx context.Context, pollID int) (*domainChat.Poll, error)
+	GetOptionByID(ctx context.Context, optionID int) (*domainChat.Option, error)
+
+	ListPollsByChat(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Poll, error)
+}

@@ -182,7 +182,7 @@ CREATE TABLE poll_options
     id          SERIAL PRIMARY KEY,
     poll_id     INT  NOT NULL,
     option_text TEXT NOT NULL,
-    FOREIGN KEY (poll_id) REFERENCES polls (id)
+    FOREIGN KEY (poll_id) REFERENCES polls (id) ON DELETE CASCADE
 );
 
 CREATE TABLE votes
@@ -190,8 +190,8 @@ CREATE TABLE votes
     user_id        INT NOT NULL,
     poll_option_id INT NOT NULL,
     PRIMARY KEY (user_id, poll_option_id),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (poll_option_id) REFERENCES poll_options (id)
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ,
+    FOREIGN KEY (poll_option_id) REFERENCES poll_options (id)  ON DELETE CASCADE
 );
 
 -- ================================================

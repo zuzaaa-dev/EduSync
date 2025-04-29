@@ -2,6 +2,7 @@ package service
 
 import (
 	dtoChat "EduSync/internal/delivery/dto/chat"
+	dtoChat2 "EduSync/internal/delivery/http/chat/dto"
 	dtoFavorite "EduSync/internal/delivery/http/favorite/dto"
 	dtoSchedule "EduSync/internal/delivery/http/schedule/dto"
 	domainChat "EduSync/internal/domain/chat"
@@ -102,4 +103,12 @@ type FileFavoriteService interface {
 	AddFavorite(ctx context.Context, userID, fileID int) error
 	RemoveFavorite(ctx context.Context, userID, fileID int) error
 	ListFavorites(ctx context.Context, userID int) ([]dtoFavorite.FileInfo, error)
+}
+
+type PollService interface {
+	CreatePoll(ctx context.Context, userID, chatID int, question string, options []string) (int, error)
+	DeletePoll(ctx context.Context, userID, pollID int) error
+	Vote(ctx context.Context, userID, pollID, optionID int) error
+	ListPolls(ctx context.Context, userID, chatID, limit, offset int) ([]*dtoChat2.PollSummary, error)
+	Unvote(ctx context.Context, userID, pollID, optionID int) error
 }

@@ -34,6 +34,7 @@ func SetupRouter(
 	materialHandler *materialHandler.MaterialHandler,
 	teacherInitHandler *scheduleHandler.TeacherInitialsHandler,
 	fileFavHandler *favorite.FileFavoriteHandler,
+	pollHandler *chatHandler.PollHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
 	router := gin.Default()
@@ -92,6 +93,16 @@ func SetupRouter(
 				protected.GET("/files/favorites", fileFavHandler.ListFavoriteFiles)
 				protected.POST("/files/:id/favorite", fileFavHandler.AddFavoriteFile)
 				protected.DELETE("/files/:id/favorite", fileFavHandler.RemoveFavoriteFile)
+
+				polls := chatGroup.Group("/:id/polls")
+				{
+					polls.GET("", pollHandler.ListPollsHandler)
+					polls.POST("", pollHandler.CreatePoll)
+					polls.DELETE("/:poll_id", pollHandler.DeletePoll)
+					polls.POST("/:poll_id/vote", pollHandler.Vote)
+					polls.DELETE("/:poll_id/vote", pollHandler.UnvoteHandler)
+				}
+
 			}
 
 		}

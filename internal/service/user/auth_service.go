@@ -169,14 +169,14 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 	}
 
 	// Генерируем access token.
-	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, time.Hour)
+	accessToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, time.Hour*24)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации токена: %v", err)
 		return "", "", err
 	}
 
 	// Генерируем refresh token.
-	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, 24*time.Hour)
+	refreshToken, err := s.jwtManager.GenerateJWT(user.ID, user.IsTeacher, user.Email, user.FullName, institutionId, groupId, 7*24*time.Hour)
 	if err != nil {
 		s.log.Errorf("Ошибка генерации рефреш токена: %v", err)
 		return "", "", err

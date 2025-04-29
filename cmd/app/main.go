@@ -87,6 +87,7 @@ func main() {
 	chatRepo := chat.NewChatRepository(db)
 	messageRepo := chat.NewMessageRepository(db)
 	favoriteRepo := favoriteRepository.NewFileFavoriteRepository(db)
+	pollRepo := chat.NewPollRepository(db)
 
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
@@ -118,6 +119,8 @@ func main() {
 	messageSvc := chat2.NewMessageService(messageRepo, logger)
 	favoriteSvc := favorite.NewFileFavoriteService(favoriteRepo, materialRepo, messageRepo, chatRepo, logger)
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
+	pollSvc := chat2.NewPollService(pollRepo, chatRepo, logger)
+
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
@@ -131,7 +134,7 @@ func main() {
 	materialHandler := materialHand.NewFileHandler(materialService)
 	teacherInitionalsHandler := schedule2.NewTeacherInitialsHandler(teacherInitionalsService)
 	favoriteHandler := favorite2.NewFileFavoriteHandler(favoriteSvc)
-
+	pollHandler := chat3.NewPollHandler(pollSvc)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, chatRepo,
 		authHandler,
@@ -145,6 +148,7 @@ func main() {
 		materialHandler,
 		teacherInitionalsHandler,
 		favoriteHandler,
+		pollHandler,
 		logger,
 	)
 
