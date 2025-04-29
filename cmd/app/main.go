@@ -4,6 +4,7 @@ import (
 	"EduSync/internal/config"
 	"EduSync/internal/delivery/http"
 	chat3 "EduSync/internal/delivery/http/chat"
+	favorite2 "EduSync/internal/delivery/http/favorite"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
 	materialHand "EduSync/internal/delivery/http/material"
@@ -15,6 +16,7 @@ import (
 	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
 	teacherParser "EduSync/internal/integration/parser/rksi/teacher"
 	"EduSync/internal/repository/chat"
+	favoriteRepository "EduSync/internal/repository/favorite"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
 	materialRepository "EduSync/internal/repository/material"
@@ -22,6 +24,7 @@ import (
 	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
 	chat2 "EduSync/internal/service/chat"
+	"EduSync/internal/service/favorite"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
 	materialServ "EduSync/internal/service/material"
@@ -30,7 +33,6 @@ import (
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
-	"time"
 )
 
 // @title          EduSync API
@@ -84,6 +86,8 @@ func main() {
 	materialRepo := materialRepository.NewFileRepository(db)
 	chatRepo := chat.NewChatRepository(db)
 	messageRepo := chat.NewMessageRepository(db)
+	favoriteRepo := favoriteRepository.NewFileFavoriteRepository(db)
+
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
@@ -112,13 +116,13 @@ func main() {
 
 	chatSvc := chat2.NewChatService(chatRepo, subjectRepo, userRepo, logger)
 	messageSvc := chat2.NewMessageService(messageRepo, logger)
-
+	favoriteSvc := favorite.NewFileFavoriteService(favoriteRepo, materialRepo, messageRepo, chatRepo, logger)
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
-	go groupService.StartWorker(100 * time.Minute)
-	go scheduleService.StartWorkerInitials(100 * time.Minute)
+	//go groupService.StartWorker(100 * time.Minute)
+	//go scheduleService.StartWorkerInitials(100 * time.Minute)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
@@ -126,6 +130,8 @@ func main() {
 	messageHandler := chat4.NewMessageHandler(messageSvc)
 	materialHandler := materialHand.NewFileHandler(materialService)
 	teacherInitionalsHandler := schedule2.NewTeacherInitialsHandler(teacherInitionalsService)
+	favoriteHandler := favorite2.NewFileFavoriteHandler(favoriteSvc)
+
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, chatRepo,
 		authHandler,
@@ -138,6 +144,7 @@ func main() {
 		messageHandler,
 		materialHandler,
 		teacherInitionalsHandler,
+		favoriteHandler,
 		logger,
 	)
 

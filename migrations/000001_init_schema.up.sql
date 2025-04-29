@@ -158,11 +158,11 @@ CREATE TABLE student_chats
 -- ================================================
 CREATE TABLE favorites
 (
-    user_id    INT NOT NULL,
-    message_id INT NOT NULL,
-    PRIMARY KEY (user_id, message_id),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (message_id) REFERENCES messages (id)
+    user_id INT NOT NULL,
+    file_id INT NOT NULL,
+    PRIMARY KEY (user_id, file_id),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (file_id) REFERENCES message_files (id) ON DELETE CASCADE
 );
 
 -- ================================================

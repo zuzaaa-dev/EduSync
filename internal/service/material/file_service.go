@@ -3,7 +3,6 @@ package material
 import (
 	"EduSync/internal/service"
 	"context"
-	"embed"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -26,8 +25,6 @@ func NewFileService(
 ) service.FileService {
 	return &fileService{files, msgs, chats, log}
 }
-
-var f embed.FS
 
 func (s *fileService) File(ctx context.Context, userID, fileID int) (*os.File, string, error) {
 	f, err := s.files.ByID(ctx, fileID)
@@ -64,5 +61,4 @@ func (s *fileService) File(ctx context.Context, userID, fileID int) (*os.File, s
 	}
 
 	return fhandle, fhandle.Name(), nil
-	//panic("implement me")
 }

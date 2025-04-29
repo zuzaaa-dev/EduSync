@@ -2,6 +2,7 @@ package service
 
 import (
 	dtoChat "EduSync/internal/delivery/dto/chat"
+	dtoFavorite "EduSync/internal/delivery/http/favorite/dto"
 	dtoSchedule "EduSync/internal/delivery/http/schedule/dto"
 	domainChat "EduSync/internal/domain/chat"
 	domainGroup "EduSync/internal/domain/group"
@@ -95,4 +96,10 @@ type MessageService interface {
 // FileService отдаёт файл по id, проверяя, что пользователь — участник чата.
 type FileService interface {
 	File(ctx context.Context, userID, fileID int) (*os.File, string, error)
+}
+
+type FileFavoriteService interface {
+	AddFavorite(ctx context.Context, userID, fileID int) error
+	RemoveFavorite(ctx context.Context, userID, fileID int) error
+	ListFavorites(ctx context.Context, userID int) ([]dtoFavorite.FileInfo, error)
 }

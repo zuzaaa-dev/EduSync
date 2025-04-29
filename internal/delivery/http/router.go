@@ -3,6 +3,7 @@ package http
 import (
 	_ "EduSync/docs/swagger"
 	chatHandler "EduSync/internal/delivery/http/chat"
+	"EduSync/internal/delivery/http/favorite"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
 	materialHandler "EduSync/internal/delivery/http/material"
@@ -32,6 +33,7 @@ func SetupRouter(
 	messageHandler *messageHandler.MessageHandler,
 	materialHandler *materialHandler.MaterialHandler,
 	teacherInitHandler *scheduleHandler.TeacherInitialsHandler,
+	fileFavHandler *favorite.FileFavoriteHandler,
 	log *logrus.Logger,
 ) *gin.Engine {
 	router := gin.Default()
@@ -87,6 +89,9 @@ func SetupRouter(
 					messages.GET("/search", messageHandler.SearchMessagesHandler)
 				}
 				protected.GET("/files/:id", materialHandler.GetFileHandler)
+				protected.GET("/files/favorites", fileFavHandler.ListFavoriteFiles)
+				protected.POST("/files/:id/favorite", fileFavHandler.AddFavoriteFile)
+				protected.DELETE("/files/:id/favorite", fileFavHandler.RemoveFavoriteFile)
 			}
 
 		}

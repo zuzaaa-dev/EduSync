@@ -129,3 +129,10 @@ type FileRepository interface {
 	// ByID возвращает запись о файле (включая message_id!).
 	ByID(ctx context.Context, fileID int) (*domainChat.File, error)
 }
+
+type FileFavoriteRepository interface {
+	Add(ctx context.Context, userID, fileID int) error
+	Remove(ctx context.Context, userID, fileID int) error
+	Exists(ctx context.Context, userID, fileID int) (bool, error)
+	ListByUser(ctx context.Context, userID int) ([]int, error)
+}
