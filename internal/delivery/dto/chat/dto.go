@@ -4,7 +4,7 @@ import domainChat "EduSync/internal/domain/chat"
 
 // CreateChatRequest модель создания чата
 // swagger:model
-var CreateChatRequest struct {
+type CreateChatRequest struct {
 	// ID чата
 	// example: 1
 	GroupID int `json:"group_id" binding:"required"`

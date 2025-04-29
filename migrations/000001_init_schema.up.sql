@@ -126,7 +126,6 @@ CREATE TABLE messages
     message_group_id  INT,
     parent_message_id INT,
     created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (text IS NOT NULL OR message_group_id IS NOT NULL),
     FOREIGN KEY (chat_id) REFERENCES chats (id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (message_group_id) REFERENCES messages (id),
