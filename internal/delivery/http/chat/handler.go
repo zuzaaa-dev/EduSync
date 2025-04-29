@@ -28,7 +28,7 @@ func NewChatHandler(chatService service.ChatService) *ChatHandler {
 // @Accept       json
 // @Produce      json
 // @Param        input  body      object{group_id=int,subject_id=int}  true  "Данные чата"
-// @Success      201  {object}  object{message=string,chat_id=int}
+// @Success      201  {object}  object{message=string,chat_id=ChatInfo}
 // @Failure      400  {object} dto.ErrorResponse
 // @Failure      401  {object} dto.ErrorResponse
 // @Failure      500  {object} dto.ErrorResponse
@@ -309,7 +309,16 @@ func (h *ChatHandler) LeaveChatHandler(c *gin.Context) {
 }
 
 // ListChatsHandler отдаёт все чаты для текущего пользователя.
-// GET /chats
+// swagger:route GET /chats Chats listChats
+// @Summary      Список чатов
+// @Description  Возвращает все чаты, в которых участвует текущий пользователь. Если пользователь — преподаватель, возвращаются все чаты, которые он создал или к которым присоединился.
+// @Tags         Chats
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {array}   ChatInfo
+// @Failure      401  {object}  dto.ErrorResponse  "Пользователь не авторизован"
+// @Failure      500  {object}  dto.ErrorResponse  "Внутренняя ошибка сервера"
+// @Router       /chats [get]
 func (h *ChatHandler) ListChatsHandler(c *gin.Context) {
 	userID := c.GetInt("user_id")
 	isTeacher := c.GetBool("is_teacher")
