@@ -220,7 +220,7 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 		out = append(out, &domainSchedule.Item{
 			ID:              e.ID,
 			GroupID:         e.GroupID,
-			GroupName:       groupName, // ← вот добавили
+			GroupName:       groupName,
 			Subject:         subjName,
 			Date:            e.Date,
 			PairNumber:      e.PairNumber,
@@ -236,14 +236,12 @@ func (s *scheduleService) ByGroupID(ctx context.Context, groupID int) ([]*domain
 
 // ByTeacherInitialsID возвращает расписание по initials_id (для разных групп).
 func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID int) ([]*domainSchedule.Item, error) {
-	// 1) Забираем все записи по initialsID
 	entries, err := s.repo.ByTeacherInitialsID(ctx, initialsID)
 	if err != nil {
 		s.log.Errorf("Ошибка получения расписания по initials_id=%d: %v", initialsID, err)
 		return nil, fmt.Errorf("не удалось получить расписание")
 	}
 
-	// 2) Собираем уникальные subject_id и group_id
 	subjectIDs := make(map[int]struct{}, len(entries))
 	groupIDs := make(map[int]struct{}, len(entries))
 	for _, e := range entries {
@@ -251,7 +249,6 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		groupIDs[e.GroupID] = struct{}{}
 	}
 
-	// 3) Получаем названия предметов
 	subjMap := make(map[int]string, len(subjectIDs))
 	for id := range subjectIDs {
 		sub, err := s.subjectSvc.ByID(ctx, id)
@@ -264,7 +261,6 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		}
 	}
 
-	// 4) Получаем названия групп
 	groupMap := make(map[int]string, len(groupIDs))
 	for gid := range groupIDs {
 		grp, err := s.groupRepo.ById(ctx, gid)
@@ -277,7 +273,6 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		}
 	}
 
-	// 5) Собираем DTO
 	var out []*domainSchedule.Item
 	for _, e := range entries {
 		subjName := subjMap[e.SubjectID]
@@ -299,7 +294,7 @@ func (s *scheduleService) ByTeacherInitialsID(ctx context.Context, initialsID in
 		out = append(out, &domainSchedule.Item{
 			ID:              e.ID,
 			GroupID:         e.GroupID,
-			GroupName:       groupMap[e.GroupID], // ← и здесь
+			GroupName:       groupMap[e.GroupID],
 			Subject:         subjName,
 			Date:            e.Date,
 			PairNumber:      e.PairNumber,

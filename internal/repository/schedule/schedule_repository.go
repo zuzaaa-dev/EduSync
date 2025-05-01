@@ -99,8 +99,17 @@ func (r *PostgresScheduleRepository) ByGroupID(ctx context.Context, groupID int)
 		entry := &domainSchedule.Schedule{}
 		var teacherInitialsID *int
 
-		err := rows.Scan(&entry.ID, &entry.GroupID, &entry.SubjectID, &entry.Date, &entry.PairNumber, &entry.Classroom,
-			&teacherInitialsID, &entry.StartTime, &entry.EndTime)
+		err := rows.Scan(
+			&entry.ID,
+			&entry.GroupID,
+			&entry.SubjectID,
+			&entry.Date,
+			&entry.PairNumber,
+			&entry.Classroom,
+			&teacherInitialsID,
+			&entry.StartTime,
+			&entry.EndTime,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("ошибка сканирования записи расписания: %v", err)
 		}
@@ -176,7 +185,7 @@ func (r *PostgresScheduleRepository) ByTeacherInitialsID(ctx context.Context, in
 	var entries []*domainSchedule.Schedule
 	for rows.Next() {
 		ent := &domainSchedule.Schedule{}
-		var tiID sql.NullInt64
+
 		if err := rows.Scan(
 			&ent.ID,
 			&ent.GroupID,
@@ -184,7 +193,7 @@ func (r *PostgresScheduleRepository) ByTeacherInitialsID(ctx context.Context, in
 			&ent.Date,
 			&ent.PairNumber,
 			&ent.Classroom,
-			&tiID,
+			&ent.TeacherInitialsID,
 			&ent.StartTime,
 			&ent.EndTime,
 		); err != nil {
