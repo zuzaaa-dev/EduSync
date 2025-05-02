@@ -12,6 +12,7 @@ import (
 	schedule2 "EduSync/internal/delivery/http/schedule"
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
+	"EduSync/internal/delivery/ws"
 	groupParser "EduSync/internal/integration/parser/rksi/group"
 	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
 	teacherParser "EduSync/internal/integration/parser/rksi/teacher"
@@ -115,11 +116,13 @@ func main() {
 		logger,
 	)
 
+	hub := ws.NewHub()
+
 	chatSvc := chat2.NewChatService(chatRepo, subjectRepo, userRepo, logger)
-	messageSvc := chat2.NewMessageService(messageRepo, logger)
+	messageSvc := chat2.NewMessageService(messageRepo, logger, hub)
 	favoriteSvc := favorite.NewFileFavoriteService(favoriteRepo, materialRepo, messageRepo, chatRepo, logger)
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
-	pollSvc := chat2.NewPollService(pollRepo, chatRepo, logger)
+	pollSvc := chat2.NewPollService(pollRepo, chatRepo, logger, hub)
 
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
@@ -150,6 +153,7 @@ func main() {
 		favoriteHandler,
 		pollHandler,
 		logger,
+		hub,
 	)
 
 	// Запускаем сервер

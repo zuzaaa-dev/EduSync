@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"EduSync/internal/delivery/ws"
 	"EduSync/internal/repository"
 	"EduSync/internal/service"
 	"context"
@@ -10,6 +11,7 @@ import (
 	"mime/multipart"
 	"os"
 	"strings"
+	"time"
 
 	domainChat "EduSync/internal/domain/chat"
 	"github.com/sirupsen/logrus"
@@ -20,12 +22,14 @@ var ErrInternal = errors.New("внутренняя ошибка сервера")
 type messageService struct {
 	repo repository.MessageRepository
 	log  *logrus.Logger
+	hub  *ws.Hub
 }
 
-func NewMessageService(repo repository.MessageRepository, logger *logrus.Logger) service.MessageService {
+func NewMessageService(repo repository.MessageRepository, logger *logrus.Logger, hub *ws.Hub) service.MessageService {
 	return &messageService{
 		repo: repo,
 		log:  logger,
+		hub:  hub,
 	}
 }
 
@@ -81,6 +85,17 @@ func (s *messageService) SendMessage(ctx context.Context, msg domainChat.Message
 		s.log.Errorf("Ошибка создания сообщения: %v", err)
 		return 0, fmt.Errorf("не удалось создать сообщение")
 	}
+
+	// Загружаем только что созданное сообщение целиком (со всеми файлами), чтобы отдать в WS
+	created, err := s.repo.ByID(ctx, id)
+	if err != nil {
+		s.log.Errorf("ошибка получения нового сообщения %d: %v", id, err)
+	} else if created != nil {
+		// broadcast в комнату chat_<chatID>
+		room := fmt.Sprintf("chat_%d", created.ChatID)
+		s.hub.Broadcast(room, "message:new", created)
+	}
+
 	return id, nil
 }
 
@@ -132,9 +147,13 @@ func (s *messageService) DeleteMessage(ctx context.Context, messageID int, reque
 	}
 
 	if err = tx.Commit(); err != nil {
-		s.log.Error("Commit:", err)
 		return ErrInternal
 	}
+
+	// после успешного удаления
+	room := fmt.Sprintf("chat_%d", msg.ChatID)
+	s.hub.Broadcast(room, "message:delete", map[string]int{"id": messageID})
+
 	return nil
 }
 
@@ -146,6 +165,12 @@ func (s *messageService) ReplyMessage(ctx context.Context, parentMessageID int, 
 		s.log.Errorf("Ошибка создания ответа на сообщение %d: %v", parentMessageID, err)
 		return 0, fmt.Errorf("не удалось создать ответ")
 	}
+	reply, err := s.repo.ByID(ctx, id)
+	if err == nil && reply != nil {
+		room := fmt.Sprintf("chat_%d", reply.ChatID)
+		s.hub.Broadcast(room, "message:new", reply)
+	}
+
 	return id, nil
 }
 
@@ -206,6 +231,8 @@ func (s *messageService) SendMessageWithFiles(
 		s.log.Error("create msg:", err)
 		return 0, errors.New("failed to save message")
 	}
+	// Соберем FileInfo для отправки клиентам
+	var attachedFiles []domainChat.FileInfo
 
 	for _, fh := range files {
 		// a) сохраняем физически и получаем URL
@@ -214,15 +241,32 @@ func (s *messageService) SendMessageWithFiles(
 			return 0, errors.New("failed to save file")
 		}
 		// b) сохраняем в БД
-		if err := s.repo.CreateMessageFileTx(ctx, tx, msgID, dst); err != nil {
+		fileID, err := s.repo.CreateMessageFileTx(ctx, tx, msgID, dst)
+		if err != nil {
 			s.log.Error("save file record:", err)
 			return 0, errors.New("failed to save file record")
 		}
+		attachedFiles = append(attachedFiles, domainChat.FileInfo{
+			ID:      fileID,
+			FileURL: dst,
+		})
 	}
 
 	if err = tx.Commit(); err != nil {
 		s.log.Error("tx commit:", err)
 		return 0, errors.New("unexpected error")
 	}
+	outgoing := domainChat.Message{
+		ID:              msgID,
+		ChatID:          msg.ChatID,
+		UserID:          msg.UserID,
+		Text:            msg.Text,
+		MessageGroupID:  msg.MessageGroupID,
+		ParentMessageID: msg.ParentMessageID,
+		CreatedAt:       time.Now(),
+		Files:           attachedFiles,
+	}
+	room := fmt.Sprintf("chat_%d", msg.ChatID)
+	s.hub.Broadcast(room, "message:new", outgoing)
 	return msgID, nil
 }

@@ -12,6 +12,7 @@ import (
 	subjectHandler "EduSync/internal/delivery/http/subject"
 	"EduSync/internal/delivery/http/user"
 	"EduSync/internal/delivery/middleware"
+	"EduSync/internal/delivery/ws"
 	"EduSync/internal/repository"
 	"EduSync/internal/util"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ func SetupRouter(
 	fileFavHandler *favorite.FileFavoriteHandler,
 	pollHandler *chatHandler.PollHandler,
 	log *logrus.Logger,
+	hub *ws.Hub,
 ) *gin.Engine {
 	router := gin.Default()
 
@@ -66,6 +68,11 @@ func SetupRouter(
 			{
 				subject.GET("/institution/:institution_id", subjectHandler.GetSubjectsByInstitution)
 				subject.GET("/group/:group_id", subjectHandler.GetSubjectsByGroup)
+			}
+
+			wsGroup := protected.Group("/ws")
+			{
+				wsGroup.GET("", ws.HandleWebSocket(hub, jwtManager, tokenRepo, log))
 			}
 
 			chatGroup := protected.Group("/chats")

@@ -2,6 +2,7 @@ package chat
 
 import (
 	"EduSync/internal/delivery/http/chat/dto"
+	"EduSync/internal/delivery/ws"
 	"EduSync/internal/service"
 	"context"
 	"fmt"
@@ -16,14 +17,21 @@ type pollService struct {
 	repo     repository.PollRepository
 	chatRepo repository.ChatRepository
 	log      *logrus.Logger
+	hub      *ws.Hub
 }
 
 func NewPollService(
-	r repository.PollRepository,
-	cr repository.ChatRepository,
-	log *logrus.Logger,
+	repo repository.PollRepository,
+	chatRepo repository.ChatRepository,
+	logger *logrus.Logger,
+	hub *ws.Hub,
 ) service.PollService {
-	return &pollService{repo: r, chatRepo: cr, log: log}
+	return &pollService{
+		repo:     repo,
+		chatRepo: chatRepo,
+		log:      logger,
+		hub:      hub,
+	}
 }
 
 func (s *pollService) CreatePoll(ctx context.Context, userID, chatID int, question string, options []string) (int, error) {
@@ -55,6 +63,12 @@ func (s *pollService) CreatePoll(ctx context.Context, userID, chatID int, questi
 			_ = s.repo.DeletePoll(ctx, pollID)
 		}
 	}
+
+	summary, _ := s.buildPollSummary(ctx, pollID)
+
+	room := fmt.Sprintf("chat_%d", chatID)
+	s.hub.Broadcast(room, "poll:new", summary)
+
 	return pollID, nil
 }
 
@@ -80,6 +94,9 @@ func (s *pollService) DeletePoll(ctx context.Context, userID, pollID int) error 
 		s.log.Errorf("DeletePoll: %v", err)
 		return fmt.Errorf("cannot delete poll")
 	}
+	room := fmt.Sprintf("chat_%d", poll.ChatID)
+	s.hub.Broadcast(room, "poll:delete", map[string]int{"id": pollID})
+
 	return nil
 }
 
@@ -168,4 +185,42 @@ func (s *pollService) Unvote(ctx context.Context, userID, pollID, optionID int) 
 		return fmt.Errorf("cannot unvote")
 	}
 	return nil
+}
+
+func (s *pollService) buildPollSummary(ctx context.Context, pollID int) (*dto.PollSummary, error) {
+	poll, err := s.repo.GetPollByID(ctx, pollID)
+	if err != nil {
+		s.log.Errorf("buildPollSummary: GetPollByID: %v", err)
+		return nil, fmt.Errorf("cannot load poll")
+	}
+	if poll == nil {
+		return nil, fmt.Errorf("poll not found")
+	}
+
+	opts, err := s.repo.ListOptions(ctx, pollID)
+	if err != nil {
+		s.log.Errorf("buildPollSummary: ListOptions: %v", err)
+		return nil, fmt.Errorf("cannot load options")
+	}
+
+	summary := &dto.PollSummary{
+		ID:        poll.ID,
+		Question:  poll.Question,
+		CreatedAt: poll.CreatedAt,
+		Options:   make([]dto.OptionWithCount, 0, len(opts)),
+	}
+	for _, opt := range opts {
+		cnt, err := s.repo.CountVotes(ctx, opt.ID)
+		if err != nil {
+			s.log.Errorf("buildPollSummary: CountVotes(opt %d): %v", opt.ID, err)
+			cnt = 0
+		}
+		summary.Options = append(summary.Options, dto.OptionWithCount{
+			ID:    opt.ID,
+			Text:  opt.Text,
+			Votes: cnt,
+		})
+	}
+
+	return summary, nil
 }

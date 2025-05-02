@@ -146,12 +146,14 @@ func (r *messageRepository) CreateMessageTx(
 
 func (r *messageRepository) CreateMessageFileTx(
 	ctx context.Context, tx *sql.Tx, messageID int, fileURL string,
-) error {
-	_, err := tx.ExecContext(ctx, `
+) (int, error) {
+	var id int
+	err := tx.QueryRowContext(ctx, `
         INSERT INTO message_files (message_id, file_url)
         VALUES ($1,$2)
-    `, messageID, fileURL)
-	return err
+        RETURNING id
+    `, messageID, fileURL).Scan(&id)
+	return id, err
 }
 
 func (r *messageRepository) DeleteMessageFilesTx(ctx context.Context, tx *sql.Tx, messageID int) error {

@@ -119,7 +119,7 @@ type MessageRepository interface {
 
 	BeginTx(ctx context.Context) (*sql.Tx, error)
 	CreateMessageTx(ctx context.Context, tx *sql.Tx, msg *domainChat.Message) (int, error)
-	CreateMessageFileTx(ctx context.Context, tx *sql.Tx, messageID int, fileURL string) error
+	CreateMessageFileTx(ctx context.Context, tx *sql.Tx, messageID int, fileURL string) (int, error)
 	DeleteMessageFilesTx(ctx context.Context, tx *sql.Tx, messageID int) error
 	DeleteMessageTx(ctx context.Context, tx *sql.Tx, messageID int) error
 }
