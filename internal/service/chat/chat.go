@@ -36,9 +36,7 @@ func NewChatService(
 }
 
 // CreateChat создает чат и генерирует приглашения.
-func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*dtoChat.ChatInfo, error) {
-	// Проверка, что владелец - учитель, и другие бизнес-правила можно добавить здесь.
-	// Генерация join_code и invite_link:
+func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error) {
 	c.JoinCode = generateRandomCode(10)
 	c.InviteLink = fmt.Sprintf("https://yourapp.com/invite/%s", c.JoinCode)
 	c.CreatedAt = time.Now()
@@ -49,11 +47,7 @@ func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*dtoCh
 	}
 	s.log.Infof("Чат создан с ID: %d", chat.ID)
 
-	info, err := s.buildChatInfo(ctx, chat)
-	if err != nil {
-		s.log.Errorf("Ошибка получении инофрмации: %v", err)
-	}
-	return info, nil
+	return chat, nil
 }
 
 // ListForUser возвращает все чаты, в которых участвует userID или которые он создал.
@@ -119,8 +113,6 @@ func (s *chatService) JoinChat(ctx context.Context, chatID, userID int, codeOrLi
 
 // RecreateInvite генерирует новый join_code и invite_link, если запрос делает владелец.
 func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID int) (*domainChat.Chat, error) {
-	// Проверить, что запрашивающий является владельцем чата (это можно проверить через ChatByID)
-	// TODO добавить возврат новой пригласительной ссылки
 	chat, err := s.repo.ChatByID(ctx, chatID)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка получения чата: %w", err)

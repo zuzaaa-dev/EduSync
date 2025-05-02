@@ -40,6 +40,12 @@ func (h *ChatHandler) CreateChatHandler(c *gin.Context) {
 		return
 	}
 
+	isTeacher := c.GetBool("is_teacher")
+	if !isTeacher {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Ошибка доступа"})
+		return
+	}
+
 	ownerID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неизвестный владелец"})
