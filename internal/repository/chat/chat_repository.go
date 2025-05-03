@@ -47,6 +47,21 @@ func (r *chatRepository) ChatByID(ctx context.Context, chatID int) (*domainChat.
 	return &c, nil
 }
 
+func (r *chatRepository) ChatByCode(ctx context.Context, code string) (*domainChat.Chat, error) {
+	var c domainChat.Chat
+	err := r.db.QueryRowContext(ctx, `
+		SELECT id, group_id, owner_id, subject_id, join_code, invite_link, created_at
+		FROM chats WHERE join_code = $1
+	`, code).Scan(&c.ID, &c.GroupID, &c.OwnerID, &c.SubjectID, &c.JoinCode, &c.InviteLink, &c.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ошибка получения чата: %w", err)
+	}
+	return &c, nil
+}
+
 func (r *chatRepository) DeleteChat(ctx context.Context, chatID int) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM chats WHERE id = $1`, chatID)
 	if err != nil {

@@ -78,7 +78,7 @@ type ChatService interface {
 	ListForUser(ctx context.Context, userID int, isTeacher bool) ([]*dtoChat.ChatInfo, error)
 	RecreateInvite(ctx context.Context, chatID int, ownerID int) (*domainChat.Chat, error)
 	ChatParticipants(ctx context.Context, chatID int) ([]*domainChat.Participant, error)
-	JoinChat(ctx context.Context, chatID, userID int, codeOrLink string) (*dtoChat.ChatInfo, error)
+	JoinChat(ctx context.Context, userID int, code string) (*dtoChat.ChatInfo, error)
 	DeleteChat(ctx context.Context, chatID int, ownerID int) error
 	RemoveParticipant(ctx context.Context, chatID int, ownerID int, participantID int) error
 	LeaveChat(ctx context.Context, chatID int, userID int) error

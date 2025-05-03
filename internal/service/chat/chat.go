@@ -82,10 +82,10 @@ func (s *chatService) ChatParticipants(ctx context.Context, chatID int) ([]*doma
 }
 
 // JoinChat присоединяет userID к чату и возвращает обновлённую информацию о нём.
-func (s *chatService) JoinChat(ctx context.Context, chatID, userID int, codeOrLink string) (*dtoChat.ChatInfo, error) {
-	c, err := s.repo.ChatByID(ctx, chatID)
+func (s *chatService) JoinChat(ctx context.Context, userID int, code string) (*dtoChat.ChatInfo, error) {
+	c, err := s.repo.ChatByCode(ctx, code)
 	if err != nil {
-		s.log.Errorf("repo.ChatByID(%d): %v", chatID, err)
+		s.log.Errorf("repo.ChatByCode(%d): %v", code, err)
 		return nil, fmt.Errorf("не удалось присоединиться к чату")
 	}
 	if c == nil {
@@ -93,12 +93,12 @@ func (s *chatService) JoinChat(ctx context.Context, chatID, userID int, codeOrLi
 	}
 
 	// валидация кода
-	if codeOrLink != c.JoinCode && codeOrLink != c.InviteLink {
+	if code != c.JoinCode && code != c.InviteLink {
 		return nil, domainChat.ErrInvalidJoinCode
 	}
 
-	if err := s.repo.JoinChat(ctx, chatID, userID); err != nil {
-		s.log.Errorf("repo.JoinChat(%d,%d): %v", chatID, userID, err)
+	if err := s.repo.JoinChat(ctx, c.ID, userID); err != nil {
+		s.log.Errorf("repo.JoinChat(%d,%d): %v", c.ID, userID, err)
 		return nil, fmt.Errorf("не удалось присоединиться к чату")
 	}
 

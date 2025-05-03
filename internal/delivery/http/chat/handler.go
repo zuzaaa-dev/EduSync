@@ -135,13 +135,6 @@ func (h *ChatHandler) JoinChatHandler(c *gin.Context) {
 		return
 	}
 
-	chatIDStr := c.Param("id")
-	chatID, err := strconv.Atoi(chatIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный идентификатор чата"})
-		return
-	}
-
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неизвестный участник"})
@@ -156,7 +149,7 @@ func (h *ChatHandler) JoinChatHandler(c *gin.Context) {
 		return
 	}
 
-	chatInfo, err := h.chatService.JoinChat(c.Request.Context(), chatID, userID.(int), body.Code)
+	chatInfo, err := h.chatService.JoinChat(c.Request.Context(), userID.(int), body.Code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
