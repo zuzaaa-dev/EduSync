@@ -113,6 +113,7 @@ type ChatRepository interface {
 type MessageRepository interface {
 	ByID(ctx context.Context, msgID int) (*domainChat.Message, error)
 	CreateMessage(ctx context.Context, msg *domainChat.Message) (int, error)
+	UpdateMessageTx(ctx context.Context, tx *sql.Tx, messageID int, newText string) error
 	Messages(ctx context.Context, chatID int, limit, offset int) ([]*domainChat.Message, error)
 	DeleteMessage(ctx context.Context, messageID int) error
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)

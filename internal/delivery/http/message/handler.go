@@ -232,3 +232,42 @@ func (h *MessageHandler) SearchMessagesHandler(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, messages)
 }
+
+func (h *MessageHandler) UpdateMessageHandler(c *gin.Context) {
+	// 1) Параметры
+	chatID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || chatID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный id чата"})
+		return
+	}
+	messageID, err := strconv.Atoi(c.Param("messageID"))
+	if err != nil || messageID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "неверный id сообщения"})
+		return
+	}
+	// 2) Тело запроса
+	var req struct {
+		Text *string `json:"text" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "некорректное содержание запроса"})
+		return
+	}
+	// 3) Получить user_id
+	userID := c.GetInt("user_id")
+	// 4) Вызвать сервис
+	updated, err := h.messageService.UpdateMessage(c.Copy(), messageID, userID, req.Text)
+	if err != nil {
+		switch err {
+		case domainChat.ErrNotFound:
+			c.JSON(http.StatusNotFound, gin.H{"error": "сообщение не найдено"})
+		case domainChat.ErrPermissionDenied:
+			c.JSON(http.StatusForbidden, gin.H{"error": "нет прав для редактирования"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+	// 5) Ответ
+	c.JSON(http.StatusOK, updated)
+}

@@ -92,6 +92,7 @@ func SetupRouter(
 				{
 					messages.GET("", messageHandler.GetMessagesHandler)
 					messages.POST("", messageHandler.SendMessageHandler)
+					messages.PATCH("/:messageID", messageHandler.UpdateMessageHandler)
 					messages.DELETE("/:messageID", messageHandler.DeleteMessageHandler)
 					messages.POST("/:messageID/reply", messageHandler.ReplyMessageHandler)
 					messages.GET("/search", messageHandler.SearchMessagesHandler)

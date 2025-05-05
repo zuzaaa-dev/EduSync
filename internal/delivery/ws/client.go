@@ -29,17 +29,17 @@ func HandleWebSocket(hub *Hub, mgr *util.JWTManager, tokenRepo repository.TokenR
 		auth := c.GetHeader("Authorization")
 		parts := strings.Split(auth, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(401, gin.H{"error": "требуется авторизация"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "требуется авторизация"})
 			return
 		}
 		claims, err := mgr.ParseJWT(parts[1], log)
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "некорректный токен"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "некорректный токен"})
 			return
 		}
 		valid, _ := tokenRepo.IsValid(c.Request.Context(), parts[1])
 		if !valid {
-			c.AbortWithStatusJSON(401, gin.H{"error": "токен отозван"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "токен отозван"})
 			return
 		}
 		// 2) апгрейдим

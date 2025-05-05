@@ -161,6 +161,15 @@ func (r *messageRepository) DeleteMessageFilesTx(ctx context.Context, tx *sql.Tx
 	return err
 }
 
+func (r *messageRepository) UpdateMessageTx(
+	ctx context.Context, tx *sql.Tx, messageID int, newText string,
+) error {
+	_, err := tx.ExecContext(ctx, `
+        UPDATE messages SET text = $1 WHERE id = $2
+    `, newText, messageID)
+	return err
+}
+
 func (r *messageRepository) DeleteMessageTx(ctx context.Context, tx *sql.Tx, messageID int) error {
 	_, err := tx.ExecContext(ctx, `DELETE FROM messages WHERE id = $1`, messageID)
 	return err

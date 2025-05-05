@@ -270,3 +270,65 @@ func (s *messageService) SendMessageWithFiles(
 	s.hub.Broadcast(room, "message:new", outgoing)
 	return msgID, nil
 }
+
+func (s *messageService) UpdateMessage(
+	ctx context.Context,
+	messageID, requesterID int,
+	newText *string,
+) (*domainChat.Message, error) {
+	// 1) Достать текущее сообщение
+	orig, err := s.repo.ByID(ctx, messageID)
+	if err != nil {
+		s.log.Errorf("UpdateMessage: fetch orig: %v", err)
+		return nil, ErrInternal
+	}
+	if orig == nil {
+		return nil, domainChat.ErrNotFound
+	}
+	// 2) Проверить права: автор или преподаватель
+	isTeacher := ctx.Value("is_teacher").(bool)
+	if orig.UserID != requesterID && !isTeacher {
+		return nil, domainChat.ErrPermissionDenied
+	}
+	// 3) Трим и валидация
+	text := ""
+	if newText != nil {
+		text = strings.TrimSpace(*newText)
+		if text == "" {
+			// разрешим обнулить текст?
+			return nil, fmt.Errorf("текст не может быть пустым")
+		}
+	} else {
+		return nil, fmt.Errorf("нет поля text для обновления")
+	}
+	// 4) Начать транзакцию
+	tx, err := s.repo.BeginTx(ctx)
+	if err != nil {
+		s.log.Errorf("UpdateMessage: begin tx: %v", err)
+		return nil, ErrInternal
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+	// 5) Обновить
+	if err = s.repo.UpdateMessageTx(ctx, tx, messageID, text); err != nil {
+		s.log.Errorf("UpdateMessage: exec update: %v", err)
+		return nil, ErrInternal
+	}
+	if err = tx.Commit(); err != nil {
+		s.log.Errorf("UpdateMessage: commit: %v", err)
+		return nil, ErrInternal
+	}
+	// 6) Подготовить объект для отдачи и WS
+	updated, err := s.repo.ByID(ctx, messageID)
+	if err != nil {
+		s.log.Errorf("UpdateMessage: fetch updated: %v", err)
+		return nil, ErrInternal
+	}
+	// 7) Рассылка в WS
+	room := fmt.Sprintf("chat_%d", updated.ChatID)
+	s.hub.Broadcast(room, "message:updated", updated)
+	return updated, nil
+}

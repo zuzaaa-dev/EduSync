@@ -92,6 +92,7 @@ type MessageService interface {
 	SearchMessages(ctx context.Context, chatID int, query string, limit, offset int) ([]*domainChat.Message, error)
 	MessageFiles(ctx context.Context, messageID int) ([]*domainChat.FileInfo, error)
 	SendMessageWithFiles(ctx context.Context, msg domainChat.Message, files []*multipart.FileHeader, c *gin.Context) (int, error)
+	UpdateMessage(ctx context.Context, messageID int, requesterID int, newText *string) (*domainChat.Message, error)
 }
 
 // FileService отдаёт файл по id, проверяя, что пользователь — участник чата.
