@@ -3,6 +3,7 @@ package http
 import (
 	_ "EduSync/docs/swagger"
 	chatHandler "EduSync/internal/delivery/http/chat"
+	"EduSync/internal/delivery/http/email"
 	"EduSync/internal/delivery/http/favorite"
 	groupHandler "EduSync/internal/delivery/http/group"
 	instituteHandler "EduSync/internal/delivery/http/institution"
@@ -36,6 +37,7 @@ func SetupRouter(
 	teacherInitHandler *scheduleHandler.TeacherInitialsHandler,
 	fileFavHandler *favorite.FileFavoriteHandler,
 	pollHandler *chatHandler.PollHandler,
+	emailHandler *email.ConfirmationHandler,
 	log *logrus.Logger,
 	hub *ws.Hub,
 ) *gin.Engine {
@@ -47,6 +49,9 @@ func SetupRouter(
 		api.POST("/login", authHandler.LoginHandler)
 
 		api.POST("/refresh", authHandler.RefreshTokenHandler)
+
+		api.POST("/confirm/request", emailHandler.RequestCode)
+		api.POST("/confirm/verify", emailHandler.VerifyCode)
 
 		protected := api.Group("/")
 		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager, log))

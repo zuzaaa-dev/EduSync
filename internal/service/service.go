@@ -113,3 +113,12 @@ type PollService interface {
 	ListPolls(ctx context.Context, userID, chatID, limit, offset int) ([]*dtoChat2.PollSummary, error)
 	Unvote(ctx context.Context, userID, pollID, optionID int) error
 }
+
+type EmailService interface {
+	SendCode(ctx context.Context, toEmail, subject, body string) error
+}
+
+type ConfirmationService interface {
+	RequestCode(ctx context.Context, userID int, email, action string) error
+	VerifyCode(ctx context.Context, userID int, action, code string) error
+}

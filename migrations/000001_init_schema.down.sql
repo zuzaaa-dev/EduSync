@@ -13,3 +13,4 @@ DROP TABLE IF EXISTS teachers;
 DROP TABLE IF EXISTS institution_email_masks;
 DROP TABLE IF EXISTS institutions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS email_confirmations;

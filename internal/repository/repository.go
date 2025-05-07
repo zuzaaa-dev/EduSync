@@ -155,3 +155,10 @@ type PollRepository interface {
 
 	ListPollsByChat(ctx context.Context, chatID, limit, offset int) ([]*domainChat.Poll, error)
 }
+
+type EmailConfirmationsRepository interface {
+	Create(ctx context.Context, userID int, action, code string, expiresAt time.Time) error
+	GetValid(ctx context.Context, userID int, action, code string) (bool, error)
+	MarkUsed(ctx context.Context, userID int, action, code string) error
+	CanSendNew(ctx context.Context, userID int, action string, throttle time.Duration) (bool, error)
+}

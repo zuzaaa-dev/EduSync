@@ -4,6 +4,7 @@ import (
 	"EduSync/internal/config"
 	"EduSync/internal/delivery/http"
 	chat3 "EduSync/internal/delivery/http/chat"
+	email3 "EduSync/internal/delivery/http/email"
 	favorite2 "EduSync/internal/delivery/http/favorite"
 	groupHandler "EduSync/internal/delivery/http/group"
 	institutionHandle "EduSync/internal/delivery/http/institution"
@@ -17,6 +18,7 @@ import (
 	scheduleParser "EduSync/internal/integration/parser/rksi/schedule"
 	teacherParser "EduSync/internal/integration/parser/rksi/teacher"
 	"EduSync/internal/repository/chat"
+	email2 "EduSync/internal/repository/email"
 	favoriteRepository "EduSync/internal/repository/favorite"
 	groupRepository "EduSync/internal/repository/group"
 	institutionRepository "EduSync/internal/repository/institution"
@@ -25,6 +27,7 @@ import (
 	subjectRepository "EduSync/internal/repository/subject"
 	userRepository "EduSync/internal/repository/user"
 	chat2 "EduSync/internal/service/chat"
+	"EduSync/internal/service/email"
 	"EduSync/internal/service/favorite"
 	groupServ "EduSync/internal/service/group"
 	institutionServ "EduSync/internal/service/institution"
@@ -34,6 +37,7 @@ import (
 	userService "EduSync/internal/service/user"
 	"EduSync/internal/util"
 	"log"
+	"time"
 )
 
 // @title          EduSync API
@@ -89,6 +93,7 @@ func main() {
 	messageRepo := chat.NewMessageRepository(db)
 	favoriteRepo := favoriteRepository.NewFileFavoriteRepository(db)
 	pollRepo := chat.NewPollRepository(db)
+	emailRepo := email2.NewEmailConfirmationsRepository(db)
 
 	groupParse := groupParser.NewGroupParser(cfg.UrlParserRKSI, logger)
 	teacherParse := teacherParser.NewTeacherParser(cfg.UrlParserRKSI, logger)
@@ -123,12 +128,18 @@ func main() {
 	favoriteSvc := favorite.NewFileFavoriteService(favoriteRepo, materialRepo, messageRepo, chatRepo, logger)
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	pollSvc := chat2.NewPollService(pollRepo, chatRepo, logger, hub)
+	emailSvc := email.NewSMTPEmailService(
+		"mail.nic.ru", 587,
+		"postmaster@edusync.ru", "goydaZV1337",
+		"no-reply@edusync.ru",
+	)
+	emailConfirmSVC := email.NewConfirmationService(emailRepo, emailSvc)
 
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
-	//go groupService.StartWorker(100 * time.Minute)
-	//go scheduleService.StartWorkerInitials(100 * time.Minute)
+	go groupService.StartWorker(100 * time.Minute)
+	go scheduleService.StartWorkerInitials(100 * time.Minute)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
@@ -138,6 +149,7 @@ func main() {
 	teacherInitionalsHandler := schedule2.NewTeacherInitialsHandler(teacherInitionalsService)
 	favoriteHandler := favorite2.NewFileFavoriteHandler(favoriteSvc)
 	pollHandler := chat3.NewPollHandler(pollSvc)
+	emailHandler := email3.NewConfirmationHandler(emailConfirmSVC)
 	// Настраиваем маршруты через отдельную функцию в delivery слое
 	router := http.SetupRouter(tokenRepo, chatRepo,
 		authHandler,
@@ -152,6 +164,7 @@ func main() {
 		teacherInitionalsHandler,
 		favoriteHandler,
 		pollHandler,
+		emailHandler,
 		logger,
 		hub,
 	)

@@ -51,7 +51,7 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 	}
 	userID, err := h.authService.Register(c.Request.Context(), converter)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{"error": "Ошибка создания пользователя"})
 		return
 	}
 

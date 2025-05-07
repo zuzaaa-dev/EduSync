@@ -190,8 +190,8 @@ CREATE TABLE votes
     user_id        INT NOT NULL,
     poll_option_id INT NOT NULL,
     PRIMARY KEY (user_id, poll_option_id),
-    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE ,
-    FOREIGN KEY (poll_option_id) REFERENCES poll_options (id)  ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (poll_option_id) REFERENCES poll_options (id) ON DELETE CASCADE
 );
 
 -- ================================================
@@ -204,6 +204,23 @@ CREATE TABLE institution_email_masks
     email_mask     VARCHAR(255) UNIQUE NOT NULL,
     FOREIGN KEY (institution_id) REFERENCES institutions (id) ON DELETE CASCADE
 );
+
+-- ================================================
+-- Таблица с кодами подтверждения
+-- ================================================
+CREATE TABLE email_confirmations
+(
+    id         SERIAL PRIMARY KEY,
+    user_id    INT         NOT NULL,
+    code       CHAR(6)     NOT NULL,
+    action     VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP   NOT NULL,
+    used       BOOLEAN     NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    UNIQUE (user_id, action)
+);
+
 
 -- ================================================
 -- Уникальные индексы
