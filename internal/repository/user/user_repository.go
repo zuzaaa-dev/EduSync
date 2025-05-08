@@ -99,3 +99,10 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID int, hashedP
     `, hashedPassword, userID)
 	return err
 }
+
+func (r *userRepository) DeleteByID(ctx context.Context, tx *sql.Tx, userID int) error {
+	_, err := tx.ExecContext(ctx, `
+        DELETE FROM users WHERE id = $1
+    `, userID)
+	return err
+}

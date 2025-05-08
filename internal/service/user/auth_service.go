@@ -414,3 +414,36 @@ func (s *AuthService) FindTeacherByName(ctx context.Context, teacherStr string) 
 
 	return nil, fmt.Errorf("преподаватель с инициалами %s не найден", teacherStr)
 }
+
+// DeleteAccount удаляет пользователя
+func (s *AuthService) DeleteAccount(ctx context.Context, userID int) error {
+	// Отключаем все токены
+	if err := s.tokenRepo.DeleteForUser(ctx, userID); err != nil {
+		s.log.Errorf("DeleteAccount: ошибка удаленя токенов пользователя: %v", err)
+		return fmt.Errorf("не удалось удалить сессии")
+	}
+
+	// Удаляем профиль в транзакции
+	tx, err := s.userRepo.BeginTx(ctx)
+	if err != nil {
+		s.log.Errorf("DeleteAccount: BeginTx: %v", err)
+		return fmt.Errorf("internal error")
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err = s.userRepo.DeleteByID(ctx, tx, userID); err != nil {
+		s.log.Errorf("DeleteAccount: DeleteByID: %v", err)
+		return fmt.Errorf("не удалось удалить аккаунт")
+	}
+
+	if err = tx.Commit(); err != nil {
+		s.log.Errorf("DeleteAccount: Commit: %v", err)
+		return fmt.Errorf("internal error")
+	}
+
+	return nil
+}

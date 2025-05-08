@@ -26,6 +26,7 @@ type UserService interface {
 	Logout(ctx context.Context, accessToken string) error
 	RefreshToken(ctx context.Context, inputRefreshToken, userAgent, ipAddress string) (accessToken, refreshToken string, err error)
 	FindTeacherByName(ctx context.Context, teacher string) (*domainUser.User, error)
+	DeleteAccount(ctx context.Context, userID int) error
 }
 
 type TeacherInitialsService interface {

@@ -21,6 +21,7 @@ type UserRepository interface {
 	Update(ctx context.Context, tx *sql.Tx, user *domainUser.User) error
 	Activate(ctx context.Context, userID int) error
 	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
+	DeleteByID(ctx context.Context, tx *sql.Tx, userID int) error
 }
 
 // StudentRepository описывает контракт для работы со студентами.

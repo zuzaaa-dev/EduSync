@@ -60,6 +60,7 @@ func SetupRouter(
 			protected.PUT("/profile", authHandler.UpdateProfileHandler)
 			protected.POST("/logout", authHandler.LogoutHandler)
 			protected.GET("/profile", authHandler.ProfileHandler)
+			protected.DELETE("/profile", authHandler.DeleteProfileHandler)
 			schedule := protected.Group("/schedule")
 			{
 				schedule.GET("/", scheduleHandler.GetScheduleHandler)

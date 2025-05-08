@@ -221,3 +221,21 @@ func (h *AuthHandler) ProfileHandler(c *gin.Context) {
 		IsTeacher:     isTeacher.(bool),
 	})
 }
+
+// DeleteProfileHandler удаляет аккаунт пользователя.
+// @Summary      Удалить свой аккаунт
+// @Description  Полное удаление учётной записи (только для авторизованных пользователей)
+// @Tags         Auth
+// @Security     BearerAuth
+// @Success      200 {object} object{message=string}
+// @Failure      401 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Router       /profile [delete]
+func (h *AuthHandler) DeleteProfileHandler(c *gin.Context) {
+	userID := c.GetInt("user_id")
+	if err := h.authService.DeleteAccount(c.Request.Context(), userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "аккаунт удалён"})
+}
