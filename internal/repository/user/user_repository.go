@@ -30,10 +30,17 @@ func (r *userRepository) ByEmail(ctx context.Context, email string) (*domainUser
 	user := &domainUser.User{}
 
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, email, password_hash, full_name, is_teacher 
+		SELECT id, email, password_hash, full_name, is_teacher, is_active
 		FROM users 
 		WHERE email = $1
-	`, email).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName, &user.IsTeacher)
+	`, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FullName,
+		&user.IsTeacher,
+		&user.IsActive,
+	)
 	if err == sql.ErrNoRows {
 		return nil, nil // Пользователь не найден, возвращаем nil, nil
 	}
@@ -52,10 +59,17 @@ func (r *userRepository) ByID(ctx context.Context, ID int) (*domainUser.User, er
 	user := &domainUser.User{}
 
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, email, password_hash, full_name, is_teacher 
+		SELECT id, email, password_hash, full_name, is_teacher, is_active 
 		FROM users 
 		WHERE id = $1
-	`, ID).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.FullName, &user.IsTeacher)
+	`, ID).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FullName,
+		&user.IsTeacher,
+		&user.IsActive,
+	)
 	if err == sql.ErrNoRows {
 		return nil, nil // Пользователь не найден, возвращаем nil, nil
 	}
@@ -69,5 +83,19 @@ func (r *userRepository) Update(ctx context.Context, tx *sql.Tx, user *domainUse
 		`UPDATE users SET full_name = $1 WHERE id = $2`,
 		user.FullName, user.ID,
 	)
+	return err
+}
+
+func (r *userRepository) Activate(ctx context.Context, userID int) error {
+	_, err := r.db.ExecContext(ctx, `
+        UPDATE users SET is_active = TRUE WHERE id = $1
+    `, userID)
+	return err
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, userID int, hashedPassword string) error {
+	_, err := r.db.ExecContext(ctx, `
+        UPDATE users SET password_hash = $1 WHERE id = $2
+    `, hashedPassword, userID)
 	return err
 }

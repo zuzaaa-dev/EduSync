@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strconv"
 )
 
 // Config хранит настройки приложения
@@ -14,6 +15,13 @@ type Config struct {
 	LogLevel      string
 	JWTSecret     []byte
 	UrlParserRKSI string
+
+	SMTPHost     string
+	SMTPPort     int
+	SMTPUser     string
+	SMTPPassword string
+	FromEmail    string
+	BaseURL      string
 }
 
 // LoadConfig загружает конфигурацию из .env или переменных окружения
@@ -28,6 +36,15 @@ func LoadConfig() (*Config, error) {
 		JWTSecret:     []byte(getEnv("JWT_SECRET", "default-secret-key")),
 		UrlParserRKSI: getEnv("URL_PARSER_RKSI", ""),
 	}
+
+	smtpPort, _ := strconv.Atoi(getEnv("SMTP_PORT", "587"))
+
+	cfg.SMTPHost = getEnv("SMTP_HOST", "")
+	cfg.SMTPPort = smtpPort
+	cfg.SMTPUser = getEnv("SMTP_USER", "")
+	cfg.SMTPPassword = getEnv("SMTP_PASSWORD", "")
+	cfg.FromEmail = getEnv("SMTP_FROM", "no-reply@edusync.ru")
+	cfg.BaseURL = getEnv("APP_BASE_URL", "https://edusync.ru")
 
 	// Формируем DatabaseURL из компонентов
 	dbUser := getEnv("DB_USER", "")

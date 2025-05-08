@@ -18,30 +18,35 @@ import (
 
 // AuthService управляет процессами регистрации, авторизации и логаута.
 type AuthService struct {
-	userRepo          repository.UserRepository
-	studentRepo       repository.StudentRepository
-	teacherRepo       repository.TeacherRepository
-	tokenRepo         repository.TokenRepository
-	instEmailMaskRepo repository.EmailMaskRepository
-	jwtManager        *util.JWTManager
-	log               *logrus.Logger
+	userRepo            repository.UserRepository
+	studentRepo         repository.StudentRepository
+	teacherRepo         repository.TeacherRepository
+	tokenRepo           repository.TokenRepository
+	instEmailMaskRepo   repository.EmailMaskRepository
+	confirmationService service.ConfirmationService
+	jwtManager          *util.JWTManager
+	log                 *logrus.Logger
 }
 
 // NewAuthService создает новый экземпляр AuthService.
-func NewAuthService(userRepo repository.UserRepository,
+func NewAuthService(
+	userRepo repository.UserRepository,
 	studentRepo repository.StudentRepository,
 	teacherRepo repository.TeacherRepository,
 	tokenRepo repository.TokenRepository,
 	instEmailMaskRepo repository.EmailMaskRepository,
+	confirmationService service.ConfirmationService,
 	jwtManager *util.JWTManager,
-	log *logrus.Logger) service.UserService {
+	log *logrus.Logger,
+) service.UserService {
 	return &AuthService{userRepo: userRepo,
-		studentRepo:       studentRepo,
-		teacherRepo:       teacherRepo,
-		tokenRepo:         tokenRepo,
-		instEmailMaskRepo: instEmailMaskRepo,
-		jwtManager:        jwtManager,
-		log:               log,
+		studentRepo:         studentRepo,
+		teacherRepo:         teacherRepo,
+		tokenRepo:           tokenRepo,
+		instEmailMaskRepo:   instEmailMaskRepo,
+		confirmationService: confirmationService,
+		jwtManager:          jwtManager,
+		log:                 log,
 	}
 }
 
@@ -119,7 +124,12 @@ func (s *AuthService) Register(ctx context.Context, user domainUser.CreateUser) 
 		s.log.Errorf("ошибка коммита транзакции: %v", err)
 		return 0, domainUser.ErrInvalidCredentials
 	}
-	return userID, err
+
+	if err := s.confirmationService.RequestCode(ctx, user.Email, "register"); err != nil {
+		s.log.Errorf("Ошибка отправки письма активации: %v", err)
+		// не фатально — просто логируем
+	}
+	return userID, nil
 }
 
 // Login выполняет авторизацию пользователя: сравнивает пароль и генерирует токены.
@@ -133,7 +143,9 @@ func (s *AuthService) Login(ctx context.Context, email, password, userAgent, ipA
 	if user == nil {
 		return "", "", errors.New("неверный email или пароль")
 	}
-
+	if !user.IsActive {
+		return "", "", fmt.Errorf("активируйте аккаунт с помощью email")
+	}
 	// Сравниваем пароль.
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {

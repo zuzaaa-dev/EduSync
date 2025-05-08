@@ -12,6 +12,7 @@ type User struct {
 	PasswordHash []byte
 	FullName     string
 	IsTeacher    bool
+	IsActive     bool
 }
 
 // CreateUser представляет пользователя системы.

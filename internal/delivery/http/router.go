@@ -47,11 +47,12 @@ func SetupRouter(
 	{
 		api.POST("/register", authHandler.RegisterHandler)
 		api.POST("/login", authHandler.LoginHandler)
-
 		api.POST("/refresh", authHandler.RefreshTokenHandler)
 
 		api.POST("/confirm/request", emailHandler.RequestCode)
+		api.GET("/confirm/activate", emailHandler.Activate)
 		api.POST("/confirm/verify", emailHandler.VerifyCode)
+		api.POST("/confirm/reset", emailHandler.ResetPassword)
 
 		protected := api.Group("/")
 		protected.Use(middleware.JWTMiddleware(tokenRepo, jwtManager, log))

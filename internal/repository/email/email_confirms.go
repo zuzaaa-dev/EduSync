@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -82,4 +83,17 @@ func (r *postgresEmailConfRepo) CanSendNew(ctx context.Context, userID int, acti
 		return false, err
 	}
 	return time.Since(created) >= throttle, nil
+}
+
+func (r *postgresEmailConfRepo) GetByActionCode(ctx context.Context, action, code string) (int, error) {
+	var userID int
+	err := r.db.QueryRowContext(ctx, `
+        SELECT user_id 
+          FROM email_confirmations
+         WHERE action=$1 AND code=$2 AND used = FALSE AND expires_at > NOW()
+    `, action, code).Scan(&userID)
+	if err == sql.ErrNoRows {
+		return 0, fmt.Errorf("code not found or expired")
+	}
+	return userID, err
 }

@@ -119,6 +119,8 @@ type EmailService interface {
 }
 
 type ConfirmationService interface {
-	RequestCode(ctx context.Context, userID int, email, action string) error
-	VerifyCode(ctx context.Context, userID int, action, code string) error
+	RequestCode(ctx context.Context, email, action string) error
+	VerifyCode(ctx context.Context, action, code string, userID *int) error
+	ResetPassword(ctx context.Context, code, newPassword string) error
+	UserIDByCode(ctx context.Context, action, code string) (int, error)
 }

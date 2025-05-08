@@ -19,6 +19,8 @@ type UserRepository interface {
 	ByEmail(ctx context.Context, email string) (*domainUser.User, error)
 	ByID(ctx context.Context, id int) (*domainUser.User, error)
 	Update(ctx context.Context, tx *sql.Tx, user *domainUser.User) error
+	Activate(ctx context.Context, userID int) error
+	UpdatePassword(ctx context.Context, userID int, hashedPassword string) error
 }
 
 // StudentRepository описывает контракт для работы со студентами.
@@ -161,4 +163,5 @@ type EmailConfirmationsRepository interface {
 	GetValid(ctx context.Context, userID int, action, code string) (bool, error)
 	MarkUsed(ctx context.Context, userID int, action, code string) error
 	CanSendNew(ctx context.Context, userID int, action string, throttle time.Duration) (bool, error)
+	GetByActionCode(ctx context.Context, action, code string) (int, error)
 }

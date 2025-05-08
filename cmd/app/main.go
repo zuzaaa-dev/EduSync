@@ -100,11 +100,18 @@ func main() {
 	scheduleParse := scheduleParser.NewScheduleParser(cfg.UrlParserRKSI, logger)
 	subjectService := subjectServ.NewSubjectService(subjectRepo, logger)
 	teacherInitionalsService := scheduleServ.NewTeacherInitialsService(teacherInitionalsRepo, logger)
+	emailSvc := email.NewSMTPEmailService(
+		cfg.SMTPHost, cfg.SMTPPort,
+		cfg.SMTPUser, cfg.SMTPPassword,
+		cfg.FromEmail,
+	)
+	emailConfirmSVC := email.NewConfirmationService(emailRepo, userRepo, emailSvc, cfg.BaseURL)
 	authService := userService.NewAuthService(userRepo,
 		studentRepo,
 		teacherRepo,
 		tokenRepo,
 		emailMaskRepo,
+		emailConfirmSVC,
 		jwtManager,
 		logger,
 	)
@@ -128,12 +135,6 @@ func main() {
 	favoriteSvc := favorite.NewFileFavoriteService(favoriteRepo, materialRepo, messageRepo, chatRepo, logger)
 	emailMaskSvc := institutionServ.NewEmailMaskService(emailMaskRepo, logger)
 	pollSvc := chat2.NewPollService(pollRepo, chatRepo, logger, hub)
-	emailSvc := email.NewSMTPEmailService(
-		"mail.nic.ru", 587,
-		"postmaster@edusync.ru", "goydaZV1337",
-		"no-reply@edusync.ru",
-	)
-	emailConfirmSVC := email.NewConfirmationService(emailRepo, emailSvc)
 
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
