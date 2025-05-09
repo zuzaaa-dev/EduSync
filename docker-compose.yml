@@ -9,6 +9,8 @@ services:
       - .env
     depends_on:
       - db
+    volumes:
+      - uploads_data:/app/uploads
     networks:
       - edusync_network
 
@@ -21,7 +23,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${DB_PORT}:5431"
+      - "5431:${DB_PORT}"
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:
@@ -29,6 +31,7 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
 
 networks:
   edusync_network:

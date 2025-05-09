@@ -141,6 +141,7 @@ func main() {
 	groupHandle := groupHandler.NewGroupHandler(groupService)
 	go groupService.StartWorker(100 * time.Minute)
 	go scheduleService.StartWorkerInitials(100 * time.Minute)
+	//go scheduleService.StartWorker(2 * time.Hour * 24)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)
