@@ -27,13 +27,13 @@ type RegistrationUserReq struct {
 	// Пароль
 	// required: true
 	// example: mysecretpassword
-	Password string `json:"password" binding:"required" example:"mysecretpassword"`
+	Password string `json:"password" binding:"required,min=8,max=15" example:"mysecretpassword"`
 	// Полное имя пользователя
 	// required: true
-	FullName string `json:"full_name" binding:"required" example:"Фамилия Имя Отчество"`
+	FullName string `json:"full_name" binding:"required,min=1,max=255" example:"Фамилия Имя Отчество"`
 	// ID учебного учреждения
 	// required: true
-	InstitutionID int `json:"institution_id" binding:"required" example:"1"`
+	InstitutionID int `json:"institution_id" binding:"required,gt=0" example:"1"`
 	// ID группы
 	GroupID int `json:"group_id" example:"1"`
 	// Является ли пользователь учителем

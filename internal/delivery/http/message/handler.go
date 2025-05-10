@@ -2,10 +2,13 @@ package chat
 
 import (
 	domainChat "EduSync/internal/domain/chat"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
+	"strings"
 
 	serviceChat "EduSync/internal/service"
 	"github.com/gin-gonic/gin"
@@ -93,6 +96,11 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 
 	text := c.PostForm("text")
 
+	if text != "" && len(text) > 1000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "текст не более 1000 символов"})
+		return
+	}
+
 	var mgid, pmid *int
 	if s := c.PostForm("message_group_id"); s != "" {
 		if v, err := strconv.Atoi(s); err == nil {
@@ -113,6 +121,29 @@ func (h *MessageHandler) SendMessageHandler(c *gin.Context) {
 	var files []*multipart.FileHeader
 	if form != nil {
 		files = form.File["files"]
+	}
+	if len(files) > 8 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "максимум 8 файлов на сообщение"})
+		return
+	}
+	const maxFileSize = 30 << 20
+	allowedExt := map[string]bool{
+		// доки
+		".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
+		".ppt": true, ".pptx": true, ".pdf": true, ".txt": true,
+		// картинки
+		".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
+	}
+	for _, fh := range files {
+		if fh.Size > maxFileSize {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("файл %s превышает 30МБ", fh.Filename)})
+			return
+		}
+		ext := strings.ToLower(filepath.Ext(fh.Filename))
+		if !allowedExt[ext] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("недопустимый формат файла %s", fh.Filename)})
+			return
+		}
 	}
 
 	msg := domainChat.Message{

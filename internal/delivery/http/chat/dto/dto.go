@@ -8,10 +8,10 @@ type CreatePollReq struct {
 	// in:body
 	// Вопрос опроса
 	// example: "Как вам новый формат занятий?"
-	Question string `json:"question" binding:"required"`
+	Question string `json:"question" binding:"required,min=1,max=255"`
 	// Варианты ответа (минимум 2)
 	// example: ["Очень понравилось", "Нормально", "Не понравилось"]
-	Options []string `json:"options" binding:"required,min=2,dive,required"`
+	Options []string `json:"options" binding:"required,min=1,max=8,dive,required,min=1,max=255"`
 }
 
 // VoteReq — тело запроса на голос.
