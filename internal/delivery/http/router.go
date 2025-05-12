@@ -42,7 +42,7 @@ func SetupRouter(
 	hub *ws.Hub,
 ) *gin.Engine {
 	router := gin.Default()
-
+	gin.SetMode(gin.ReleaseMode)
 	api := router.Group("/api")
 	{
 		api.POST("/register", authHandler.RegisterHandler)

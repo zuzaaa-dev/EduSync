@@ -11,13 +11,6 @@ RUN go mod download
 # Копируем исходный код
 COPY . .
 
-RUN GO111MODULE=on CGO_ENABLED=0 go install github.com/swaggo/swag/v2/cmd/swag@latest
-
-RUN swag init -g cmd/app/main.go --output docs/swagger
-
-# Добавляем зависимость в go.mod
-RUN go get github.com/swaggo/swag/v2@latest
-
 # Собираем бинарник. Используем опцию -trimpath для уменьшения размера.
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o /app/bin/app ./cmd/app/main.go
 
@@ -29,6 +22,9 @@ WORKDIR /app
 
 # Копируем бинарник из сборочного образа
 COPY --from=builder /app/bin/app /app/app
+
+# Копируем
+COPY --from=builder /app/docs /app
 
 # Копируем файл миграций (если они требуются на старте)
 COPY --from=builder /app/migrations /app/migrations
