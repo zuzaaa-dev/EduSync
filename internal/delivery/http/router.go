@@ -16,6 +16,7 @@ import (
 	"EduSync/internal/delivery/ws"
 	"EduSync/internal/repository"
 	"EduSync/internal/util"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
@@ -43,6 +44,7 @@ func SetupRouter(
 ) *gin.Engine {
 	router := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
+	router.SetTrustedProxies([]string{"127.0.0.1"})
 	api := router.Group("/api")
 	{
 		api.POST("/register", authHandler.RegisterHandler)

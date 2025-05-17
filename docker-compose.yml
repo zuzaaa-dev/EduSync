@@ -26,12 +26,28 @@ services:
       - "5431:${DB_PORT}"
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./migrations/pgadmin-init:/docker-entrypoint-initdb.d
     networks:
       - edusync_network
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: edusync_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "support@edusync.ru"
+      PGADMIN_DEFAULT_PASSWORD: "StrongPgAdminPass!"
+    ports:
+      - "8081:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - edusync_network
+  
 volumes:
   db_data:
   uploads_data:
+  pgadmin_data:
 
 networks:
   edusync_network:

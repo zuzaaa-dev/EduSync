@@ -49,7 +49,7 @@ import (
 // @name                        Authorization
 // @description                 "Токен в формате: Bearer {token}"
 
-// @host      localhost:8080
+// @host      edusync.ru
 // @BasePath  /api
 func main() {
 	// Загружаем конфигурацию
@@ -139,9 +139,9 @@ func main() {
 	subjectHandle := subjectHandler.NewInstitutionHandler(subjectService)
 	authHandler := user.NewAuthHandler(authService)
 	groupHandle := groupHandler.NewGroupHandler(groupService)
-	go groupService.StartWorker(100 * time.Minute)
-	go scheduleService.StartWorkerInitials(100 * time.Minute)
-	//go scheduleService.StartWorker(2 * time.Hour * 24)
+	go groupService.StartWorker(24 * time.Hour)
+	go scheduleService.StartWorkerInitials(24 * time.Hour)
+	// go scheduleService.StartWorker(2 * time.Hour * 24)
 	institutionService := institutionServ.NewInstitutionService(institutionRepo, logger)
 	institutionHandler := institutionHandle.NewInstitutionHandler(institutionService, emailMaskSvc)
 	scheduleHandler := schedule2.NewScheduleHandler(scheduleService)

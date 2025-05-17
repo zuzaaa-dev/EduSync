@@ -11,6 +11,7 @@ import (
 
 	dtoChat "EduSync/internal/delivery/dto/chat"
 	domainChat "EduSync/internal/domain/chat"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -38,7 +39,7 @@ func NewChatService(
 // CreateChat создает чат и генерирует приглашения.
 func (s *chatService) CreateChat(ctx context.Context, c domainChat.Chat) (*domainChat.Chat, error) {
 	c.JoinCode = generateRandomCode(10)
-	c.InviteLink = fmt.Sprintf("https://yourapp.com/invite/%s", c.JoinCode)
+	c.InviteLink = fmt.Sprintf("https://edusync.ru/invite/%s", c.JoinCode)
 	c.CreatedAt = time.Now()
 	chat, err := s.repo.CreateChat(ctx, &c)
 	if err != nil {
@@ -121,7 +122,7 @@ func (s *chatService) RecreateInvite(ctx context.Context, chatID int, ownerID in
 		return nil, fmt.Errorf("нет прав на изменение приглашения чата")
 	}
 	newCode := generateRandomCode(10)
-	newLink := fmt.Sprintf("https://yourapp.com/invite/%s", newCode)
+	newLink := fmt.Sprintf("https://edusync.ru/invite/%s", newCode)
 	if err := s.repo.UpdateChatInvite(ctx, chatID, newCode, newLink); err != nil {
 		s.log.Errorf("Ошибка обновления приглашения: %v", err)
 		return nil, fmt.Errorf("не удалось обновить приглашение")
